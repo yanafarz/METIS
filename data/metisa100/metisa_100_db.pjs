@@ -1,0 +1,22 @@
+{
+  "version": "1.2",
+  "dbname": "metisa_100_db",
+  "dbtype": "Protein",
+  "db-version": 5,
+  "description": "C:\\Metisa_plana_Target_Mining\\data\\metisa_100.fasta",
+  "number-of-letters": 32350,
+  "number-of-sequences": 100,
+  "last-updated": "2026-08-06T17:47:00",
+  "number-of-volumes": 1,
+  "bytes-total": 1041895,
+  "bytes-to-cache": 33391,
+  "files": [
+    "metisa_100_db.pdb",
+    "metisa_100_db.phr",
+    "metisa_100_db.pin",
+    "metisa_100_db.pot",
+    "metisa_100_db.psq",
+    "metisa_100_db.ptf",
+    "metisa_100_db.pto"
+  ]
+}
