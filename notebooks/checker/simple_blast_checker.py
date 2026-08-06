@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#check whether blast installed or not
 """Standalone Windows script to verify NCBI BLAST+ and database files."""
 
 import os
