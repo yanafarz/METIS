@@ -7,27 +7,8 @@ for uniprot database here: [https://www.uniprot.org/help/downloads](https://ftp.
 
              pipeline:
      
-           quality check [00]
-                 |
-            clean file [01]
-                 |
-              blastp [02]
-                 |
-             threshold [03]
-                 |
-contamination screening (bacteria etc) 
-                 |
-          domain annotation
-                 |
-    gene family/subfamily assignment
-                 |
-      candidate target selection
-                 |
-          Scoring candidates
-                 |
-             top-10 table
-                 |
-       biological justification
-
-       
-                 
+     quality check [00] -> clean file [01] -> blastp [02] -> threshold [03]
+                           |
+     contamination screening -> (bacteria etc) -> domain annotation ->  gene family/subfamily assignment
+                           |
+     candidate target selection -> Scoring candidates -> top-10 table -> biological justification
