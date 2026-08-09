@@ -15,7 +15,7 @@ for uniprot database here: [https://www.uniprot.org/help/downloads](https://ftp.
                  |
              threshold [03]
                  |
-contamination screening (bacteria etc)
+contamination screening (bacteria etc) 
                  |
           domain annotation
                  |
