@@ -224,6 +224,20 @@ def clean_fasta(input_file, output_file):
                 )
             )
 
+        # --------------------------------------------------
+        # CHECK EMPTY SEQUENCES
+        # --------------------------------------------------
+
+        empty_after_cleaning = sum(
+            len(sequence) == 0
+            for header, sequence in cleaned
+        )
+
+        print(
+            "Empty sequences after cleaning:",
+            empty_after_cleaning
+        )  
+
 
         # --------------------------------------------------
         # WRITE OUTPUT
