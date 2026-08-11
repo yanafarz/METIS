@@ -1,13 +1,19 @@
+
 import os
 import statistics
 import pandas as pd
 import matplotlib.pyplot as plt
 
+
+# ==========================================================
+# PATH FUNCTIONS
+# ==========================================================
+
 def expand_path(path):
 
     return os.path.abspath(
         os.path.expanduser(
-            path.strip()
+            path.strip().strip('"')
         )
     )
 
@@ -24,14 +30,29 @@ def check_file_exists(path):
     return True
 
 
+# ==========================================================
+# BANNER
+# ==========================================================
+
 def banner():
 
-    print("""
-===============================================================
-                 FASTA INPUT QC TOOL
-        Protein / Gene FASTA Quality Control
-===============================================================
-""")
+    print(
+        "\n"
+        + "=" * 65
+    )
+
+    print(
+        "              FASTA QUALITY CONTROL"
+    )
+
+    print(
+        "=" * 65
+    )
+
+
+# ==========================================================
+# READ FASTA
+# ==========================================================
 
 def read_fasta(input_file):
 
@@ -43,7 +64,8 @@ def read_fasta(input_file):
     with open(
         input_file,
         "r",
-        encoding="utf-8"
+        encoding="utf-8",
+        errors="replace"
     ) as file:
 
         for line in file:
@@ -55,6 +77,7 @@ def read_fasta(input_file):
 
             if line.startswith(">"):
 
+                # Save previous sequence
                 if header is not None:
 
                     sequences.append(
@@ -69,8 +92,11 @@ def read_fasta(input_file):
 
             else:
 
-                sequence += line.upper()
+                if header is not None:
 
+                    sequence += line.upper()
+
+        # Save final sequence
         if header is not None:
 
             sequences.append(
@@ -82,6 +108,11 @@ def read_fasta(input_file):
 
     return sequences
 
+
+# ==========================================================
+# DETECT SEQUENCE TYPE
+# ==========================================================
+
 def detect_sequence_type(sequences):
 
     dna_letters = set("ATGCN")
@@ -90,7 +121,9 @@ def detect_sequence_type(sequences):
 
     for header, sequence in sequences:
 
-        all_letters.update(sequence.replace("*", ""))
+        all_letters.update(
+            sequence.replace("*", "")
+        )
 
     if all_letters.issubset(dna_letters):
 
@@ -100,83 +133,146 @@ def detect_sequence_type(sequences):
 
         return "PROTEIN"
 
+
+# ==========================================================
+# CALCULATE QC
+# ==========================================================
+
 def calculate_qc(sequences):
 
+    if len(sequences) == 0:
+
+        print(
+            "ERROR: No FASTA sequences found."
+        )
+
+        return None
+
     headers = [
+
         header
+
         for header, sequence in sequences
+
     ]
 
     sequences_only = [
+
         sequence
+
         for header, sequence in sequences
+
     ]
+
+    # ------------------------------------------------------
+    # Empty sequences
+    # ------------------------------------------------------
+
+    empty_sequences = sum(
+
+        len(sequence) == 0
+
+        for sequence in sequences_only
+
+    )
+
+    # ------------------------------------------------------
+    # Sequence lengths
+    # ------------------------------------------------------
 
     lengths = [
+
         len(sequence)
+
         for sequence in sequences_only
+
     ]
+
+    # ------------------------------------------------------
+    # Sequence IDs
+    # ------------------------------------------------------
 
     sequence_ids = [
-        header.split()[0]
-        for header in headers
-    ]
 
+        header.split()[0]
+
+        for header in headers
+
+    ]
 
     # ------------------------------------------------------
     # Duplicate IDs
     # ------------------------------------------------------
 
-    unique_ids = set(sequence_ids)
-
-    duplicate_ids = (
-        len(sequence_ids) -
-        len(unique_ids)
+    unique_ids = set(
+        sequence_ids
     )
 
+    duplicate_ids = (
+
+        len(sequence_ids)
+
+        -
+
+        len(unique_ids)
+
+    )
 
     # ------------------------------------------------------
     # Length statistics
     # ------------------------------------------------------
 
-    min_length = min(lengths)
+    min_length = min(
+        lengths
+    )
 
-    max_length = max(lengths)
+    max_length = max(
+        lengths
+    )
 
-    mean_length = statistics.mean(lengths)
+    mean_length = statistics.mean(
+        lengths
+    )
 
-    median_length = statistics.median(lengths)
-
+    median_length = statistics.median(
+        lengths
+    )
 
     # ------------------------------------------------------
-    # Short proteins
+    # Short sequences
     # ------------------------------------------------------
 
     below_50 = sum(
-        length < 50
-        for length in lengths
-    )
 
+        length < 50
+
+        for length in lengths
+
+    )
 
     # ------------------------------------------------------
     # X residues
     # ------------------------------------------------------
 
     containing_x = sum(
-        "X" in sequence
-        for sequence in sequences_only
-    )
 
+        "X" in sequence
+
+        for sequence in sequences_only
+
+    )
 
     # ------------------------------------------------------
     # Terminal stop
     # ------------------------------------------------------
 
     ending_stop = sum(
-        sequence.endswith("*")
-        for sequence in sequences_only
-    )
 
+        sequence.endswith("*")
+
+        for sequence in sequences_only
+
+    )
 
     # ------------------------------------------------------
     # Internal stop
@@ -189,7 +285,6 @@ def calculate_qc(sequences):
         if "*" in sequence[:-1]:
 
             internal_stop += 1
-
 
     # ------------------------------------------------------
     # Results
@@ -206,6 +301,9 @@ def calculate_qc(sequences):
         "Duplicate IDs":
             duplicate_ids,
 
+        "Empty sequences":
+            empty_sequences,
+
         "Minimum length":
             min_length,
 
@@ -213,12 +311,15 @@ def calculate_qc(sequences):
             max_length,
 
         "Mean length":
-            round(mean_length, 2),
+            round(
+                mean_length,
+                2
+            ),
 
         "Median length":
             median_length,
 
-        "Sequences <50 aa":
+        "Sequences <50 residues":
             below_50,
 
         "Sequences containing X":
@@ -229,27 +330,198 @@ def calculate_qc(sequences):
 
         "Sequences with internal *":
             internal_stop
+
     }
 
-
     return results
+
+
+# ==========================================================
+# ASK OUTPUT FILE NAME
+# ==========================================================
+
+def ask_output_file(input_file):
+
+    folder = os.path.dirname(
+        input_file
+    )
+
+    print(
+        "\nOUTPUT FILE"
+    )
+
+    print(
+        "The report will be saved in:"
+    )
+
+    print(
+        folder
+    )
+
+    while True:
+
+        filename = input(
+            "\nEnter Excel output filename "
+            "(example: fasta_qc_report.xlsx): "
+        ).strip()
+
+        # --------------------------------------------------
+        # Prevent empty filename
+        # --------------------------------------------------
+
+        if not filename:
+
+            print(
+                "\nERROR: Filename cannot be empty."
+            )
+
+            continue
+
+        # --------------------------------------------------
+        # Remove accidental quotes
+        # --------------------------------------------------
+
+        filename = filename.strip('"')
+
+        # --------------------------------------------------
+        # Add .xlsx automatically
+        # --------------------------------------------------
+
+        if not filename.lower().endswith(
+            ".xlsx"
+        ):
+
+            filename += ".xlsx"
+
+        # --------------------------------------------------
+        # Prevent path input
+        #
+        # User should enter filename only.
+        # --------------------------------------------------
+
+        if (
+            os.path.dirname(filename)
+            or
+            os.path.isabs(filename)
+        ):
+
+            print(
+                "\nERROR: Enter a filename only."
+            )
+
+            print(
+                "Do not enter a folder path."
+            )
+
+            continue
+
+        output_file = os.path.join(
+            folder,
+            filename
+        )
+
+        # --------------------------------------------------
+        # Existing file
+        # --------------------------------------------------
+
+        if os.path.exists(
+            output_file
+        ):
+
+            print(
+                "\nWARNING: File already exists:"
+            )
+
+            print(
+                output_file
+            )
+
+            overwrite = input(
+                "\nOverwrite this file? (y/n): "
+            ).strip().lower()
+
+            if overwrite != "y":
+
+                print(
+                    "\nPlease enter a different filename."
+                )
+
+                continue
+
+        return output_file
+
+
+# ==========================================================
+# SAVE EXCEL REPORT
+# ==========================================================
+
+def save_excel_report(
+    qc_results,
+    output_file
+):
+
+    qc_table = pd.DataFrame(
+
+        list(
+            qc_results.items()
+        ),
+
+        columns=[
+            "QC Measurement",
+            "Value"
+        ]
+
+    )
+
+    qc_table.to_excel(
+        output_file,
+        index=False
+    )
+
+    print(
+        "\nQC report saved:"
+    )
+
+    print(
+        output_file
+    )
+
+
+# ==========================================================
+# MAIN PROGRAM
+# ==========================================================
 
 banner()
 
 
+# ==========================================================
+# INPUT FASTA
+# ==========================================================
+
 input_file = expand_path(
+
     input(
-        "Input FASTA file (.fasta/.faa/.fna): "
+        "\nInput FASTA file "
+        "(.fasta/.faa/.fna): "
     )
+
 )
 
 
-if not check_file_exists(input_file):
+if not check_file_exists(
+    input_file
+):
 
     raise SystemExit
 
 
-print("\nReading FASTA...")
+# ==========================================================
+# READ FASTA
+# ==========================================================
+
+print(
+    "\nReading FASTA..."
+)
 
 
 sequences = read_fasta(
@@ -263,6 +535,19 @@ print(
 )
 
 
+if not sequences:
+
+    print(
+        "\nERROR: No FASTA sequences found."
+    )
+
+    raise SystemExit
+
+
+# ==========================================================
+# DETECT TYPE
+# ==========================================================
+
 sequence_type = detect_sequence_type(
     sequences
 )
@@ -274,14 +559,36 @@ print(
 )
 
 
+# ==========================================================
+# CALCULATE QC
+# ==========================================================
+
 qc_results = calculate_qc(
     sequences
 )
 
 
-print("\n===============================================================")
-print("                         QC RESULTS")
-print("===============================================================\n")
+if qc_results is None:
+
+    raise SystemExit
+
+
+# ==========================================================
+# PRINT QC RESULTS
+# ==========================================================
+
+print(
+    "\n"
+    + "=" * 65
+)
+
+print(
+    "                         QC RESULTS"
+)
+
+print(
+    "=" * 65
+)
 
 
 for measurement, value in qc_results.items():
@@ -290,57 +597,101 @@ for measurement, value in qc_results.items():
         f"{measurement}: {value}"
     )
 
+
+# ==========================================================
+# CREATE QC TABLE
+# ==========================================================
+
 qc_table = pd.DataFrame(
-    list(qc_results.items()),
+
+    list(
+        qc_results.items()
+    ),
+
     columns=[
         "QC Measurement",
         "Value"
     ]
+
 )
 
 
-qc_table
+# ==========================================================
+# LENGTH HISTOGRAM
+# ==========================================================
 
 lengths = [
+
     len(sequence)
+
     for header, sequence in sequences
+
 ]
 
 
-plt.figure(figsize=(10, 6))
+plt.figure(
+    figsize=(10, 6)
+)
+
 
 plt.hist(
     lengths,
     bins=50
 )
 
-plt.xlabel("Sequence length (aa / nt)")
-plt.ylabel("Number of sequences")
-plt.title(
-    f"FASTA Sequence Length Distribution — {sequence_type}"
+
+plt.xlabel(
+    "Sequence length (aa / nt)"
 )
+
+plt.ylabel(
+    "Number of sequences"
+)
+
+plt.title(
+    f"FASTA Sequence Length Distribution — "
+    f"{sequence_type}"
+)
+
 
 plt.tight_layout()
 
 plt.show()
 
-folder = os.path.dirname(
+
+# ==========================================================
+# ASK OUTPUT FILE NAME
+# ==========================================================
+
+output_file = ask_output_file(
     input_file
 )
 
 
-output_file = os.path.join(
-    folder,
-    "fasta_qc_report.xlsx"
+# ==========================================================
+# SAVE EXCEL
+# ==========================================================
+
+save_excel_report(
+    qc_results,
+    output_file
 )
 
 
-qc_table.to_excel(
-    output_file,
-    index=False
+# ==========================================================
+# FINISH
+# ==========================================================
+
+print(
+    "\n"
+    + "=" * 65
 )
 
+print(
+    "DONE"
+)
 
-print("\nQC report saved:")
-print(output_file)
+print(
+    "=" * 65
+)
 
