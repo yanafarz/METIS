@@ -1,7 +1,7 @@
-#import + configuration
 import os
 import shutil
 import subprocess
+import re
 
 
 # ==========================================================
@@ -13,13 +13,11 @@ BLAST_TYPES = {
     "blastn": "nucleotide",
 }
 
-
 PROTEIN_DB_EXTS = [
     ".pin",
     ".psq",
     ".phr"
 ]
-
 
 NUCLEOTIDE_DB_EXTS = [
     ".nin",
@@ -27,13 +25,24 @@ NUCLEOTIDE_DB_EXTS = [
     ".nhr"
 ]
 
-
+# BLAST output WITHOUT source.
+# Source will be added by Python afterward.
 ANNOTATION_OUTFMT = (
     "6 qseqid sseqid pident length "
     "qlen slen qcovs evalue bitscore stitle"
 )
 
-#basic func
+# Default number of hits retained per query
+DEFAULT_MAX_TARGET_SEQS = "10"
+
+# Default CPU threads
+DEFAULT_THREADS = "4"
+
+
+# ==========================================================
+# BASIC FUNCTIONS
+# ==========================================================
+
 def expand_path(path):
 
     return os.path.abspath(
@@ -43,17 +52,16 @@ def expand_path(path):
     )
 
 
-
 def check_file_exists(path):
 
     if not os.path.isfile(path):
 
-        print(f"\nERROR: File not found:\n{path}")
+        print(f"\nERROR: File not found:")
+        print(path)
 
         return False
 
     return True
-
 
 
 def section(title):
@@ -63,51 +71,92 @@ def section(title):
     print("=" * 65)
 
 
-
 def banner():
 
     print("""
 ===============================================================
-              NCBI BLAST+ INTERACTIVE RUNNER
-          Protein / Gene Homology Annotation Tool
+                 UNIProt BLAST ANNOTATION
 ===============================================================
 """)
 
-#database check
+
+# ==========================================================
+# DATABASE CHECK
+# ==========================================================
+
 def find_db_type(db_root):
+
+    # ------------------------------------------------------
     # Normal single-volume protein database
-    protein_files = [f"{db_root}{ext}" for ext in PROTEIN_DB_EXTS]
+    # ------------------------------------------------------
+
+    protein_files = [
+        f"{db_root}{ext}"
+        for ext in PROTEIN_DB_EXTS
+    ]
+
     if all(os.path.isfile(path) for path in protein_files):
+
         return "protein"
 
+
+    # ------------------------------------------------------
     # Normal single-volume nucleotide database
-    nucleotide_files = [f"{db_root}{ext}" for ext in NUCLEOTIDE_DB_EXTS]
+    # ------------------------------------------------------
+
+    nucleotide_files = [
+        f"{db_root}{ext}"
+        for ext in NUCLEOTIDE_DB_EXTS
+    ]
+
     if all(os.path.isfile(path) for path in nucleotide_files):
+
         return "nucleotide"
 
+
+    # ------------------------------------------------------
     # Multi-volume protein database
+    # ------------------------------------------------------
+
     protein_volume_files = [
-        f"{db_root}.00{ext}" for ext in PROTEIN_DB_EXTS
+        f"{db_root}.00{ext}"
+        for ext in PROTEIN_DB_EXTS
     ]
+
     if all(os.path.isfile(path) for path in protein_volume_files):
+
         return "protein"
 
+
+    # ------------------------------------------------------
     # Multi-volume nucleotide database
+    # ------------------------------------------------------
+
     nucleotide_volume_files = [
-        f"{db_root}.00{ext}" for ext in NUCLEOTIDE_DB_EXTS
+        f"{db_root}.00{ext}"
+        for ext in NUCLEOTIDE_DB_EXTS
     ]
+
     if all(os.path.isfile(path) for path in nucleotide_volume_files):
+
         return "nucleotide"
 
-    # BLAST alias database (.pal = protein, .nal = nucleotide)
+
+    # ------------------------------------------------------
+    # BLAST alias database
+    # ------------------------------------------------------
+
     if os.path.isfile(f"{db_root}.pal"):
+
         return "protein"
+
 
     if os.path.isfile(f"{db_root}.nal"):
+
         return "nucleotide"
 
-    return None
 
+    return None
 
 
 def validate_db_root(db_root):
@@ -116,23 +165,33 @@ def validate_db_root(db_root):
 
         print("\nERROR: BLAST database files not found.")
 
-        print("Expected:")
+        print("\nExpected protein database:")
         print(db_root + ".pin/.psq/.phr")
+
+        print("\nExpected nucleotide database:")
         print(db_root + ".nin/.nsq/.nhr")
 
         return False
 
-
     return True
 
-#blast + fasta validation
-def validate_blast_input(blast_type, query_path, db_root):
 
+# ==========================================================
+# BLAST + FASTA VALIDATION
+# ==========================================================
+
+def validate_blast_input(
+    blast_type,
+    query_path,
+    db_root
+):
 
     db_type = find_db_type(db_root)
 
 
+    # ------------------------------------------------------
     # DATABASE CHECK
+    # ------------------------------------------------------
 
     if blast_type == "blastp":
 
@@ -140,9 +199,9 @@ def validate_blast_input(blast_type, query_path, db_root):
 
             print("""
 ERROR:
-blastp requires protein BLAST database.
+blastp requires a protein BLAST database.
 
-Need:
+Required:
 .pin
 .psq
 .phr
@@ -151,16 +210,15 @@ Need:
             return False
 
 
-
     elif blast_type == "blastn":
 
         if db_type != "nucleotide":
 
             print("""
 ERROR:
-blastn requires nucleotide BLAST database.
+blastn requires a nucleotide BLAST database.
 
-Need:
+Required:
 .nin
 .nsq
 .nhr
@@ -169,24 +227,31 @@ Need:
             return False
 
 
+    # ------------------------------------------------------
+    # FASTA CHECK
+    # ------------------------------------------------------
 
     print("\nChecking FASTA file...")
 
 
     try:
 
-        with open(query_path,"r",encoding="utf-8") as file:
-
+        with open(
+            query_path,
+            "r",
+            encoding="utf-8"
+        ) as file:
 
             first_line = file.readline()
 
 
             if not first_line.startswith(">"):
 
-                print("ERROR: FASTA header missing")
+                print(
+                    "ERROR: FASTA header missing."
+                )
 
                 return False
-
 
 
             sequence = ""
@@ -199,13 +264,11 @@ Need:
                     sequence += line.strip().upper()
 
 
+        if len(sequence) == 0:
 
-        if len(sequence)==0:
-
-            print("ERROR: Empty FASTA")
+            print("ERROR: Empty FASTA.")
 
             return False
-
 
 
         dna_letters = set("ATGCN")
@@ -213,42 +276,53 @@ Need:
         sequence_letters = set(sequence)
 
 
+        # --------------------------------------------------
+        # Protein validation
+        # --------------------------------------------------
 
-        if blast_type=="blastp":
+        if blast_type == "blastp":
 
             if sequence_letters.issubset(dna_letters):
 
-                print("ERROR: Protein BLAST received DNA")
+                print(
+                    "ERROR: Protein BLAST received DNA."
+                )
 
                 return False
 
 
+        # --------------------------------------------------
+        # Nucleotide validation
+        # --------------------------------------------------
 
-        if blast_type=="blastn":
+        if blast_type == "blastn":
 
             if not sequence_letters.issubset(dna_letters):
 
-                print("ERROR: Nucleotide BLAST received protein")
+                print(
+                    "ERROR: Nucleotide BLAST received protein."
+                )
 
                 return False
-
 
 
     except Exception as error:
 
-        print("ERROR:",error)
+        print("ERROR:", error)
 
         return False
-
 
 
     print("✔ FASTA detected")
 
     return True
 
-#find blast executable
-def find_blast_executable(blast_type):
 
+# ==========================================================
+# FIND BLAST EXECUTABLE
+# ==========================================================
+
+def find_blast_executable(blast_type):
 
     program = shutil.which(blast_type)
 
@@ -256,7 +330,6 @@ def find_blast_executable(blast_type):
     if program:
 
         return program
-
 
 
     possible = [
@@ -270,9 +343,7 @@ def find_blast_executable(blast_type):
     ]
 
 
-
     for folder in possible:
-
 
         exe = os.path.join(
             folder,
@@ -285,12 +356,17 @@ def find_blast_executable(blast_type):
             return exe
 
 
-
-    print("\nERROR: BLAST executable not found.")
+    print(
+        "\nERROR: BLAST executable not found."
+    )
 
     return None
 
-#user input
+
+# ==========================================================
+# BLAST TYPE
+# ==========================================================
+
 def ask_blast_type():
 
     print("""
@@ -306,7 +382,9 @@ Select BLAST method:
 
     while True:
 
-        choice = input("Select: ").strip()
+        choice = input(
+            "Select: "
+        ).strip()
 
 
         if choice == "":
@@ -314,81 +392,30 @@ Select BLAST method:
 
 
         if choice == "1":
-
             return "blastp"
 
 
         if choice == "2":
-
             return "blastn"
 
 
-        print("Invalid choice")
+        print("Invalid choice.")
 
 
-
-
-def ask_evalue():
-
-
-    print("""
-E-value:
-
-[1] 1e-3  Exploratory
-[2] 1e-5  Standard annotation
-[3] 1e-10 High confidence
-[4] Custom
-""")
-
-
-    while True:
-
-        choice=input("Select: ").strip()
-
-
-        if choice=="":
-            return "1e-5"
-
-
-        if choice=="1":
-            return "1e-3"
-
-
-        if choice=="2":
-            return "1e-5"
-
-
-        if choice=="3":
-            return "1e-10"
-
-
-        if choice=="4":
-
-            value=input("Enter E-value: ")
-
-            try:
-
-                float(value)
-
-                return value
-
-            except:
-
-                print("Invalid value")
-
-
-
+# ==========================================================
+# OUTPUT
+# ==========================================================
 
 def ask_output():
 
-    filename=input(
+    filename = input(
         "\nOutput filename: "
     ).strip()
 
 
-    if filename=="":
-        filename="blast_annotation_result"
+    if filename == "":
 
+        filename = "blast_annotation_result"
 
 
     os.makedirs(
@@ -397,29 +424,35 @@ def ask_output():
     )
 
 
-    output_path=os.path.join(
+    output_path = os.path.join(
         "output",
-        filename+".tsv"
+        filename + ".tsv"
     )
 
 
-    print("Output:",os.path.abspath(output_path))
+    print(
+        "Output:",
+        os.path.abspath(output_path)
+    )
 
 
     return output_path
 
-#buid blast command
+
+# ==========================================================
+# BUILD BLAST COMMAND
+# ==========================================================
+
 def build_blast_command(
-        blast_program,
-        query_path,
-        db_root,
-        output_path,
-        evalue,
-        max_target_seqs,
-        threads):
+    blast_program,
+    query_path,
+    db_root,
+    output_path,
+    max_target_seqs,
+    threads
+):
 
-
-    command=[
+    command = [
 
         blast_program,
 
@@ -435,9 +468,6 @@ def build_blast_command(
         "-outfmt",
         ANNOTATION_OUTFMT,
 
-        "-evalue",
-        evalue,
-
         "-max_target_seqs",
         max_target_seqs,
 
@@ -449,9 +479,118 @@ def build_blast_command(
 
     return command
 
-#header + run blast
-def add_output_header(output_path):
 
+# ==========================================================
+# DETERMINE UNIPROT SOURCE
+# ==========================================================
+
+def determine_uniprot_source(sseqid):
+
+    """
+    Determine whether a UniProt BLAST hit comes from:
+
+        Swiss-Prot
+        TrEMBL
+        Isoform
+
+    Examples:
+
+        sp|A5D794|GAPD1_BOVIN
+        -> Swiss-Prot
+
+        tr|A0A123|PROTEIN_X
+        -> TrEMBL
+
+        sp|P12345-2|PROTEIN-2
+        -> Isoform
+
+        tr|A0A123-3|PROTEIN-3
+        -> Isoform
+    """
+
+
+    if not sseqid:
+
+        return "Unknown"
+
+
+    # ------------------------------------------------------
+    # Remove whitespace if any
+    # ------------------------------------------------------
+
+    sseqid = sseqid.strip()
+
+
+    # ------------------------------------------------------
+    # Split UniProt identifier
+    #
+    # Example:
+    # sp|A5D794|GAPD1_BOVIN
+    #
+    # parts[0] = sp
+    # parts[1] = A5D794
+    # ------------------------------------------------------
+
+    parts = sseqid.split("|")
+
+
+    if len(parts) < 2:
+
+        return "Unknown"
+
+
+    database_type = parts[0].lower()
+
+    accession = parts[1]
+
+
+    # ------------------------------------------------------
+    # Check for UniProt isoform accession
+    #
+    # Example:
+    #
+    # P12345-2
+    # A0A123-3
+    # ------------------------------------------------------
+
+    if re.search(
+        r"-\d+$",
+        accession
+    ):
+
+        return "Isoform"
+
+
+    # ------------------------------------------------------
+    # Swiss-Prot
+    # ------------------------------------------------------
+
+    if database_type == "sp":
+
+        return "Swiss-Prot"
+
+
+    # ------------------------------------------------------
+    # TrEMBL
+    # ------------------------------------------------------
+
+    if database_type == "tr":
+
+        return "TrEMBL"
+
+
+    # ------------------------------------------------------
+    # Unknown source
+    # ------------------------------------------------------
+
+    return "Unknown"
+
+
+# ==========================================================
+# ADD HEADER + SOURCE
+# ==========================================================
+
+def add_header_and_source(output_path):
 
     header = (
         "qseqid\t"
@@ -463,30 +602,101 @@ def add_output_header(output_path):
         "qcovs\t"
         "evalue\t"
         "bitscore\t"
-        "stitle\n"
+        "stitle\t"
+        "source\n"
     )
 
 
-    with open(output_path,"r") as file:
+    # ------------------------------------------------------
+    # Read BLAST results
+    # ------------------------------------------------------
 
-        content=file.read()
+    with open(
+        output_path,
+        "r",
+        encoding="utf-8"
+    ) as file:
+
+        lines = file.readlines()
 
 
+    new_lines = []
 
-    with open(output_path,"w") as file:
+
+    # ------------------------------------------------------
+    # Add source to every BLAST hit
+    # ------------------------------------------------------
+
+    for line in lines:
+
+        line = line.rstrip("\n")
+
+
+        if not line.strip():
+
+            continue
+
+
+        fields = line.split("\t")
+
+
+        # Expected BLAST columns:
+        #
+        # 0 qseqid
+        # 1 sseqid
+        # 2 pident
+        # 3 length
+        # 4 qlen
+        # 5 slen
+        # 6 qcovs
+        # 7 evalue
+        # 8 bitscore
+        # 9 stitle
+
+        if len(fields) < 10:
+
+            continue
+
+
+        sseqid = fields[1]
+
+
+        source = determine_uniprot_source(
+            sseqid
+        )
+
+
+        fields.append(source)
+
+
+        new_lines.append(
+            "\t".join(fields) + "\n"
+        )
+
+
+    # ------------------------------------------------------
+    # Rewrite output
+    # ------------------------------------------------------
+
+    with open(
+        output_path,
+        "w",
+        encoding="utf-8"
+    ) as file:
 
         file.write(header)
 
-        file.write(content)
+        file.writelines(new_lines)
 
 
-
+# ==========================================================
+# RUN BLAST
+# ==========================================================
 
 def run_blast(command):
 
-
     print("\nBLAST running...")
-    
+
     print(
         subprocess.list2cmdline(command)
     )
@@ -494,103 +704,146 @@ def run_blast(command):
 
     try:
 
-
-        result=subprocess.run(
+        result = subprocess.run(
             command,
             capture_output=True,
             text=True
         )
 
 
+        if result.returncode == 0:
 
-        if result.returncode==0:
-
-            print("\n✔ BLAST completed")
+            print(
+                "\n✔ BLAST completed"
+            )
 
             return True
 
 
-
         else:
 
-            print("\nBLAST failed")
+            print(
+                "\nBLAST failed"
+            )
 
-            print(result.stderr)
+            print(
+                result.stderr
+            )
 
             return False
 
 
-
     except Exception as error:
 
-        print(error)
+        print(
+            "\nERROR:",
+            error
+        )
 
         return False
 
-#summary
-def print_summary(
-        blast_type,
-        query,
-        database,
-        output,
-        status):
 
+# ==========================================================
+# SUMMARY
+# ==========================================================
+
+def print_summary(
+    blast_type,
+    query,
+    database,
+    output,
+    status
+):
 
     print("""
-================================================
-BLAST SUMMARY
-================================================
+===============================================================
+                         SUMMARY
+===============================================================
 """)
 
 
-    print("BLAST :",blast_type)
+    print(
+        "BLAST    :",
+        blast_type
+    )
 
-    print("QUERY :",query)
+    print(
+        "QUERY    :",
+        query
+    )
 
-    print("DATABASE :",database)
+    print(
+        "DATABASE :",
+        database
+    )
 
-    print("OUTPUT :",output)
+    print(
+        "OUTPUT   :",
+        output
+    )
 
-    print("STATUS :",status)
+    print(
+        "STATUS   :",
+        status
+    )
 
-#main program
+
+# ==========================================================
+# MAIN PROGRAM
+# ==========================================================
+
 def main():
-
 
     banner()
 
 
-    section("STEP 1: BLAST TYPE")
+    # ------------------------------------------------------
+    # STEP 1
+    # ------------------------------------------------------
 
-
-    blast_type=ask_blast_type()
-
-
-
-    section("STEP 2: INPUT")
-
-
-    query_path=expand_path(
-        input("Query FASTA path: ")
+    section(
+        "STEP 1: BLAST TYPE"
     )
 
 
-    if not check_file_exists(query_path):
+    blast_type = ask_blast_type()
+
+
+    # ------------------------------------------------------
+    # STEP 2
+    # ------------------------------------------------------
+
+    section(
+        "STEP 2: INPUT"
+    )
+
+
+    query_path = expand_path(
+        input(
+            "Query FASTA path: "
+        )
+    )
+
+
+    if not check_file_exists(
+        query_path
+    ):
 
         return
 
 
-
-    db_root=expand_path(
-        input("BLAST database path: ")
+    db_root = expand_path(
+        input(
+            "BLAST database path: "
+        )
     )
 
 
-
-    if not validate_db_root(db_root):
+    if not validate_db_root(
+        db_root
+    ):
 
         return
-
 
 
     if not validate_blast_input(
@@ -602,46 +855,54 @@ def main():
         return
 
 
+    # ------------------------------------------------------
+    # STEP 3
+    # ------------------------------------------------------
+
+    section(
+        "STEP 3: PARAMETERS"
+    )
 
 
-    section("STEP 3: PARAMETERS")
-
-
-    evalue=ask_evalue()
-
-
-    max_target_seqs=input(
+    max_target_seqs = input(
         "Maximum target sequences: "
     ).strip()
 
 
-    if max_target_seqs=="":
-        max_target_seqs="5"
+    if max_target_seqs == "":
+
+        max_target_seqs = DEFAULT_MAX_TARGET_SEQS
 
 
-
-    threads=input(
+    threads = input(
         "CPU threads: "
     ).strip()
 
 
-    if threads=="":
-        threads="4"
+    if threads == "":
+
+        threads = DEFAULT_THREADS
 
 
+    # ------------------------------------------------------
+    # STEP 4
+    # ------------------------------------------------------
 
-
-    section("STEP 4: OUTPUT")
-
-
-    output_path=ask_output()
-
-
-
-    blast_program=find_blast_executable(
-        blast_type
+    section(
+        "STEP 4: OUTPUT"
     )
 
+
+    output_path = ask_output()
+
+
+    # ------------------------------------------------------
+    # FIND BLAST
+    # ------------------------------------------------------
+
+    blast_program = find_blast_executable(
+        blast_type
+    )
 
 
     if blast_program is None:
@@ -649,8 +910,11 @@ def main():
         return
 
 
+    # ------------------------------------------------------
+    # BUILD COMMAND
+    # ------------------------------------------------------
 
-    command=build_blast_command(
+    command = build_blast_command(
 
         blast_program,
 
@@ -660,8 +924,6 @@ def main():
 
         output_path,
 
-        evalue,
-
         max_target_seqs,
 
         threads
@@ -669,23 +931,36 @@ def main():
     )
 
 
+    # ------------------------------------------------------
+    # RUN BLAST
+    # ------------------------------------------------------
 
-    success=run_blast(command)
+    success = run_blast(
+        command
+    )
 
 
+    # ------------------------------------------------------
+    # ADD SOURCE COLUMN
+    # ------------------------------------------------------
 
     if success:
 
-        add_output_header(output_path)
+        add_header_and_source(
+            output_path
+        )
 
-        status="SUCCESS"
+        status = "SUCCESS"
 
 
     else:
 
-        status="FAILED"
+        status = "FAILED"
 
 
+    # ------------------------------------------------------
+    # SUMMARY
+    # ------------------------------------------------------
 
     print_summary(
 
@@ -701,5 +976,11 @@ def main():
 
     )
 
-#run
-main()
+
+# ==========================================================
+# RUN
+# ==========================================================
+
+if __name__ == "__main__":
+
+    main()
