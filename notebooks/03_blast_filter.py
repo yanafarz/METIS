@@ -1,18 +1,11 @@
 import os
 import csv
 import re
-from collections import Counter
-
-from openpyxl import Workbook
-from openpyxl.styles import Font, Alignment
-from openpyxl.utils import get_column_letter
 
 
 # ==========================================================
 # CONFIGURATION
 # ==========================================================
-
-# BLAST hit-quality thresholds
 
 MIN_IDENTITY = 30.0
 MIN_COVERAGE = 70.0
@@ -63,15 +56,15 @@ def check_file_exists(path):
 
 
 # ==========================================================
-# ASK OUTPUT / RUN NAME
+# ASK OUTPUT NAME
 # ==========================================================
 
 def ask_output_name(output_dir):
 
-    print("\nOUTPUT / RUN NAME")
+    print("\nOUTPUT FILE NAME")
 
     print(
-        "\nChoose a unique name for this screening run."
+        "\nEnter the output name WITHOUT an extension."
     )
 
     print(
@@ -85,7 +78,7 @@ def ask_output_name(output_dir):
     while True:
 
         name = input(
-            "\nOutput/run name: "
+            "\nOutput name: "
         ).strip()
 
         if not name:
@@ -97,7 +90,7 @@ def ask_output_name(output_dir):
             continue
 
         # --------------------------------------------------
-        # Remove characters unsafe for Windows filenames
+        # Remove unsafe Windows filename characters
         # --------------------------------------------------
 
         name = re.sub(
@@ -121,51 +114,38 @@ def ask_output_name(output_dir):
             continue
 
         # --------------------------------------------------
-        # Expected output files
+        # Output files
         # --------------------------------------------------
 
-        files = [
+        filtered_blast_file = os.path.join(
+            output_dir,
+            f"{name}_filtered_blast.tsv"
+        )
 
-            os.path.join(
-                output_dir,
-                f"{name}.xlsx"
-            ),
-
-            os.path.join(
-                output_dir,
-                f"{name}_pass.fasta"
-            ),
-
-            os.path.join(
-                output_dir,
-                f"{name}_pass_ids.txt"
-            ),
-
-            os.path.join(
-                output_dir,
-                f"{name}_summary.txt"
-            ),
-
-        ]
+        filtered_fasta_file = os.path.join(
+            output_dir,
+            f"{name}_filtered.fasta"
+        )
 
         # --------------------------------------------------
-        # Prevent overwriting an old run
+        # Prevent accidental overwrite
         # --------------------------------------------------
 
-        existing_files = [
-            path
-            for path in files
-            if os.path.exists(path)
-        ]
+        existing_files = []
+
+        for path in [
+            filtered_blast_file,
+            filtered_fasta_file
+        ]:
+
+            if os.path.exists(path):
+
+                existing_files.append(path)
 
         if existing_files:
 
             print(
-                "\nERROR: This output/run name already exists."
-            )
-
-            print(
-                "\nExisting files:"
+                "\nERROR: These output files already exist:"
             )
 
             for path in existing_files:
@@ -175,7 +155,7 @@ def ask_output_name(output_dir):
                 )
 
             print(
-                "\nPlease choose a different output/run name."
+                "\nPlease choose a different output name."
             )
 
             continue
@@ -215,23 +195,26 @@ def read_blast_file(path):
             # --------------------------------------------------
 
             if not row:
+
                 continue
 
             if all(
                 not cell.strip()
                 for cell in row
             ):
+
                 continue
 
             # --------------------------------------------------
-            # Skip BLAST header
+            # Skip header
             # --------------------------------------------------
 
             if row[0].strip().lower() == "qseqid":
+
                 continue
 
             # --------------------------------------------------
-            # Check number of columns
+            # Check column count
             # --------------------------------------------------
 
             if len(row) < 10:
@@ -245,7 +228,7 @@ def read_blast_file(path):
                 continue
 
             # --------------------------------------------------
-            # Parse BLAST values
+            # Parse values
             # --------------------------------------------------
 
             try:
@@ -309,7 +292,7 @@ def read_blast_file(path):
 
 def read_fasta(path):
 
-    print("\nReading protein FASTA...")
+    print("\nReading original protein FASTA...")
 
     sequences = {}
 
@@ -331,6 +314,7 @@ def read_fasta(path):
             line = line.strip()
 
             if not line:
+
                 continue
 
             # --------------------------------------------------
@@ -360,7 +344,10 @@ def read_fasta(path):
 
                     continue
 
-                # FASTA ID = first word
+                # --------------------------------------------------
+                # FASTA ID = first whitespace-separated word
+                # --------------------------------------------------
+
                 current_id = header.split()[0]
 
                 current_sequence = []
@@ -368,6 +355,7 @@ def read_fasta(path):
             else:
 
                 if current_id is None:
+
                     continue
 
                 current_sequence.append(
@@ -390,357 +378,6 @@ def read_fasta(path):
     )
 
     return sequences
-
-
-# ==========================================================
-# EXTRACT SPECIES
-# ==========================================================
-
-def extract_species(stitle):
-
-    if not stitle:
-        return "Unknown"
-
-    # ------------------------------------------------------
-    # UniProt OS= format
-    # ------------------------------------------------------
-
-    match = re.search(
-        r"\bOS=([^=]+?)(?=\s+(?:OX|GN|PE|SV|CC|KW|GO)=|$)",
-        stitle
-    )
-
-    if match:
-
-        species = match.group(1).strip()
-
-        if species:
-            return species
-
-    # ------------------------------------------------------
-    # Alternative organism formats
-    # ------------------------------------------------------
-
-    match = re.search(
-        r"\borganism[=:]\s*([^,;]+)",
-        stitle,
-        flags=re.IGNORECASE
-    )
-
-    if match:
-
-        species = match.group(1).strip()
-
-        if species:
-            return species
-
-    # ------------------------------------------------------
-    # NCBI-style [species]
-    # ------------------------------------------------------
-
-    matches = re.findall(
-        r"\[([^\[\]]+)\]",
-        stitle
-    )
-
-    if matches:
-
-        for value in reversed(matches):
-
-            value = value.strip()
-
-            if value:
-                return value
-
-    return "Unknown"
-
-
-# ==========================================================
-# EXTRACT NCBI TAXONOMY ID
-# ==========================================================
-
-def extract_taxid(stitle):
-
-    if not stitle:
-        return None
-
-    match = re.search(
-        r"\bOX=(\d+)",
-        stitle
-    )
-
-    if match:
-        return match.group(1)
-
-    return None
-
-
-# ==========================================================
-# ASK FOR NCBI TAXONOMY FILE
-# ==========================================================
-
-def ask_taxonomy_path():
-
-    print("\nSTEP 3: NCBI TAXONOMY")
-
-    print(
-        "\nYou need the NCBI rankedlineage.dmp file."
-    )
-
-    print(
-        "Example:"
-    )
-
-    print(
-        r"C:\BLAST\rankedlineage.dmp"
-    )
-
-    while True:
-
-        taxonomy_file = expand_path(
-            input(
-                "\nPath to rankedlineage.dmp: "
-            )
-        )
-
-        if not os.path.isfile(
-            taxonomy_file
-        ):
-
-            print(
-                "\nERROR: File not found:"
-            )
-
-            print(
-                taxonomy_file
-            )
-
-            continue
-
-        filename = os.path.basename(
-            taxonomy_file
-        ).lower()
-
-        if filename != "rankedlineage.dmp":
-
-            print(
-                "\nWARNING: This does not appear "
-                "to be rankedlineage.dmp."
-            )
-
-            answer = input(
-                "\nUse this file anyway? (y/n): "
-            ).strip().lower()
-
-            if answer != "y":
-                continue
-
-        print(
-            "\nNCBI taxonomy file detected:"
-        )
-
-        print(
-            taxonomy_file
-        )
-
-        return taxonomy_file
-
-
-# ==========================================================
-# LOAD NCBI TAXONOMY
-# ==========================================================
-
-def load_ranked_lineage(taxonomy_file):
-
-    print(
-        "\nLoading NCBI ranked taxonomy..."
-    )
-
-    taxonomy = {}
-
-    with open(
-        taxonomy_file,
-        "r",
-        encoding="utf-8",
-        errors="replace"
-    ) as file:
-
-        for line in file:
-
-            line = line.rstrip("\n")
-
-            if not line:
-                continue
-
-            fields = [
-                field.strip()
-                for field in line.split("|")
-            ]
-
-            if len(fields) < 2:
-                continue
-
-            taxid = fields[0]
-
-            taxonomy[taxid] = {
-
-                "scientific_name":
-                    fields[1]
-                    if len(fields) > 1
-                    else "",
-
-                "genus":
-                    fields[2]
-                    if len(fields) > 2
-                    else "",
-
-                "family":
-                    fields[3]
-                    if len(fields) > 3
-                    else "",
-
-                "order":
-                    fields[4]
-                    if len(fields) > 4
-                    else "",
-
-                "class":
-                    fields[5]
-                    if len(fields) > 5
-                    else "",
-
-                "phylum":
-                    fields[6]
-                    if len(fields) > 6
-                    else "",
-
-                "kingdom":
-                    fields[7]
-                    if len(fields) > 7
-                    else "",
-
-                "superkingdom":
-                    fields[8]
-                    if len(fields) > 8
-                    else "",
-
-            }
-
-    print(
-        f"NCBI taxonomy records loaded: "
-        f"{len(taxonomy):,}"
-    )
-
-    return taxonomy
-
-
-# ==========================================================
-# CLASSIFY TAXONOMY
-# ==========================================================
-
-def classify_taxonomy(taxonomy_record):
-
-    if not taxonomy_record:
-        return "Unknown"
-
-    values = [
-
-        taxonomy_record.get(
-            "superkingdom",
-            ""
-        ),
-
-        taxonomy_record.get(
-            "kingdom",
-            ""
-        ),
-
-        taxonomy_record.get(
-            "phylum",
-            ""
-        ),
-
-        taxonomy_record.get(
-            "class",
-            ""
-        ),
-
-        taxonomy_record.get(
-            "order",
-            ""
-        ),
-
-    ]
-
-    text = " ".join(
-        values
-    ).lower()
-
-    # ------------------------------------------------------
-    # Bacteria
-    # ------------------------------------------------------
-
-    if (
-        "bacteria" in text
-        or
-        "bacteri" in text
-    ):
-
-        return "Bacterial"
-
-    # ------------------------------------------------------
-    # Archaea
-    # ------------------------------------------------------
-
-    if (
-        "archaea" in text
-        or
-        "archae" in text
-    ):
-
-        return "Archaeal"
-
-    # ------------------------------------------------------
-    # Fungi
-    # ------------------------------------------------------
-
-    if (
-        "fungi" in text
-        or
-        "ascomycota" in text
-        or
-        "basidiomycota" in text
-    ):
-
-        return "Fungal"
-
-    # ------------------------------------------------------
-    # Arthropoda
-    # ------------------------------------------------------
-
-    if "arthropoda" in text:
-
-        return "Arthropod"
-
-    # ------------------------------------------------------
-    # Plants
-    # ------------------------------------------------------
-
-    if (
-        "viridiplantae" in text
-        or
-        "streptophyta" in text
-        or
-        "tracheophyta" in text
-    ):
-
-        return "Plant"
-
-    # ------------------------------------------------------
-    # Everything else
-    # ------------------------------------------------------
-
-    return "Other non-arthropod"
 
 
 # ==========================================================
@@ -768,459 +405,137 @@ def passes_quality_filter(hit):
 
 
 # ==========================================================
-# SELECT BEST QUALIFYING HIT
+# FILTER BLAST HITS
 # ==========================================================
 
-def select_best_hit(hits):
+def filter_blast_hits(rows):
 
-    qualifying = []
+    print(
+        "\nApplying BLAST quality thresholds..."
+    )
 
-    for hit in hits:
+    filtered_rows = []
+
+    for hit in rows:
 
         if passes_quality_filter(hit):
 
-            qualifying.append(
-                hit
-            )
+            filtered_rows.append(hit)
 
-    if not qualifying:
-
-        return None, []
-
-    # ------------------------------------------------------
-    # Ranking:
-    #
-    # 1. Lowest E-value
-    # 2. Highest bitscore
-    # 3. Highest identity
-    # 4. Highest coverage
-    # ------------------------------------------------------
-
-    qualifying.sort(
-
-        key=lambda x: (
-
-            x["evalue"],
-
-            -x["bitscore"],
-
-            -x["pident"],
-
-            -x["qcovs"],
-
-        )
-
+    removed = (
+        len(rows)
+        - len(filtered_rows)
     )
-
-    return (
-        qualifying[0],
-        qualifying
-    )
-
-
-# ==========================================================
-# DECIDE ACTION
-# ==========================================================
-
-def decide_action(
-    best_classification,
-    arthropod_hits,
-    bacterial_hits,
-    fungal_hits,
-    other_hits
-):
-
-    # ------------------------------------------------------
-    # Unknown best classification
-    # ------------------------------------------------------
-
-    if best_classification == "Unknown":
-
-        return "REVIEW_UNKNOWN"
-
-    # ------------------------------------------------------
-    # Bacterial dominance
-    # ------------------------------------------------------
-
-    if bacterial_hits > arthropod_hits:
-
-        return "FLAG_POSSIBLE_BACTERIAL"
-
-    # ------------------------------------------------------
-    # Fungal dominance
-    # ------------------------------------------------------
-
-    if fungal_hits > arthropod_hits:
-
-        return "FLAG_POSSIBLE_FUNGAL"
-
-    # ------------------------------------------------------
-    # Arthropod evidence
-    # ------------------------------------------------------
-
-    if arthropod_hits > 0:
-
-        if (
-            arthropod_hits
-            >= bacterial_hits
-            and
-            arthropod_hits
-            >= fungal_hits
-            and
-            arthropod_hits
-            >= other_hits
-        ):
-
-            return "KEEP_ARTHROPOD_REVIEW"
-
-    # ------------------------------------------------------
-    # Mixed evidence
-    # ------------------------------------------------------
-
-    if (
-        arthropod_hits > 0
-        and
-        other_hits > 0
-    ):
-
-        return "REVIEW_MIXED"
-
-    # ------------------------------------------------------
-    # Other non-arthropod
-    # ------------------------------------------------------
-
-    if other_hits > 0:
-
-        return "REVIEW_NON_ARTHROPOD"
-
-    return "REVIEW"
-
-
-# ==========================================================
-# SCREEN ALL QUERY SEQUENCES
-# ==========================================================
-
-def screen_contamination(
-    rows,
-    taxonomy
-):
 
     print(
-        "\nGrouping BLAST hits by query..."
+        f"\nOriginal BLAST hits: "
+        f"{len(rows):,}"
     )
-
-    grouped = {}
-
-    # ------------------------------------------------------
-    # Group hits
-    # ------------------------------------------------------
-
-    for row in rows:
-
-        query = row["qseqid"]
-
-        if query not in grouped:
-
-            grouped[query] = []
-
-        grouped[query].append(
-            row
-        )
 
     print(
-        f"Unique query sequences: "
-        f"{len(grouped):,}"
+        f"Hits passing threshold: "
+        f"{len(filtered_rows):,}"
     )
-
-    results = []
 
     print(
-        "\nPerforming threshold filtering "
-        "and taxonomy screening..."
+        f"Hits removed: "
+        f"{removed:,}"
     )
 
-    # ------------------------------------------------------
-    # Process every query
-    # ------------------------------------------------------
-
-    for query_id, hits in grouped.items():
-
-        best_hit, qualifying_hits = (
-            select_best_hit(hits)
-        )
-
-        # --------------------------------------------------
-        # Count classifications
-        # --------------------------------------------------
-
-        arthropod_hits = 0
-        bacterial_hits = 0
-        fungal_hits = 0
-        other_hits = 0
-        unknown_hits = 0
-
-        for hit in qualifying_hits:
-
-            taxid = extract_taxid(
-                hit["stitle"]
-            )
-
-            tax_record = (
-                taxonomy.get(taxid)
-                if taxid
-                else None
-            )
-
-            classification = (
-                classify_taxonomy(
-                    tax_record
-                )
-            )
-
-            if classification == "Arthropod":
-
-                arthropod_hits += 1
-
-            elif classification == "Bacterial":
-
-                bacterial_hits += 1
-
-            elif classification == "Fungal":
-
-                fungal_hits += 1
-
-            elif classification == "Unknown":
-
-                unknown_hits += 1
-
-            else:
-
-                other_hits += 1
-
-        # --------------------------------------------------
-        # No qualifying hit
-        # --------------------------------------------------
-
-        if best_hit is None:
-
-            results.append({
-
-                "Gene_ID":
-                    query_id,
-
-                "Best_Hit":
-                    "",
-
-                "Best_Hit_Species":
-                    "",
-
-                "Best_Hit_Classification":
-                    "No qualifying hit",
-
-                "Best_Hit_Source":
-                    "",
-
-                "Best_Hit_Identity":
-                    "",
-
-                "Best_Hit_Coverage":
-                    "",
-
-                "Best_Hit_E_value":
-                    "",
-
-                "Total_Hits":
-                    len(hits),
-
-                "Qualifying_Hits":
-                    0,
-
-                "Arthropod_Hits":
-                    0,
-
-                "Bacterial_Hits":
-                    0,
-
-                "Fungal_Hits":
-                    0,
-
-                "Other_Non_Arthropod_Hits":
-                    0,
-
-                "Unknown_Hits":
-                    0,
-
-                "Action":
-                    "REVIEW_NO_QUALIFYING_HIT",
-
-            })
-
-            continue
-
-        # --------------------------------------------------
-        # Best hit information
-        # --------------------------------------------------
-
-        species = extract_species(
-            best_hit["stitle"]
-        )
-
-        taxid = extract_taxid(
-            best_hit["stitle"]
-        )
-
-        tax_record = (
-            taxonomy.get(taxid)
-            if taxid
-            else None
-        )
-
-        best_classification = (
-            classify_taxonomy(
-                tax_record
-            )
-        )
-
-        # --------------------------------------------------
-        # Determine source
-        # --------------------------------------------------
-
-        sseqid = best_hit["sseqid"]
-
-        if sseqid.startswith("sp|"):
-
-            source = "Swiss-Prot"
-
-        elif sseqid.startswith("tr|"):
-
-            source = "TrEMBL"
-
-        elif sseqid.startswith("iso|"):
-
-            source = "Isoform"
-
-        else:
-
-            source = "Other"
-
-        # --------------------------------------------------
-        # Action
-        # --------------------------------------------------
-
-        action = decide_action(
-
-            best_classification,
-
-            arthropod_hits,
-
-            bacterial_hits,
-
-            fungal_hits,
-
-            other_hits
-
-        )
-
-        # --------------------------------------------------
-        # Save result
-        # --------------------------------------------------
-
-        results.append({
-
-            "Gene_ID":
-                query_id,
-
-            "Best_Hit":
-                best_hit["sseqid"],
-
-            "Best_Hit_Species":
-                species,
-
-            "Best_Hit_Classification":
-                best_classification,
-
-            "Best_Hit_Source":
-                source,
-
-            "Best_Hit_Identity":
-                best_hit["pident"],
-
-            "Best_Hit_Coverage":
-                best_hit["qcovs"],
-
-            "Best_Hit_E_value":
-                best_hit["evalue"],
-
-            "Total_Hits":
-                len(hits),
-
-            "Qualifying_Hits":
-                len(qualifying_hits),
-
-            "Arthropod_Hits":
-                arthropod_hits,
-
-            "Bacterial_Hits":
-                bacterial_hits,
-
-            "Fungal_Hits":
-                fungal_hits,
-
-            "Other_Non_Arthropod_Hits":
-                other_hits,
-
-            "Unknown_Hits":
-                unknown_hits,
-
-            "Action":
-                action,
-
-        })
-
-    return results
+    return filtered_rows
 
 
 # ==========================================================
-# GET PASSING GENE IDS
+# GET UNIQUE PASSING GENE IDS
 # ==========================================================
 
-def get_passing_gene_ids(results):
+def get_passing_gene_ids(filtered_rows):
 
-    return [
-        row["Gene_ID"]
-        for row in results
-        if row["Qualifying_Hits"] > 0
-    ]
+    passing_ids = []
+
+    seen = set()
+
+    for hit in filtered_rows:
+
+        gene_id = hit["qseqid"]
+
+        if gene_id not in seen:
+
+            seen.add(gene_id)
+
+            passing_ids.append(
+                gene_id
+            )
+
+    return passing_ids
 
 
 # ==========================================================
-# SAVE PASSING GENE IDS
+# SAVE FILTERED BLAST TSV
 # ==========================================================
 
-def save_passing_ids(
-    passing_ids,
+def save_filtered_blast(
+    filtered_rows,
     output_path
 ):
 
     print(
-        "\nSaving passing gene IDs..."
+        "\nSaving filtered BLAST TSV..."
     )
 
     with open(
         output_path,
         "w",
-        encoding="utf-8"
+        encoding="utf-8",
+        newline=""
     ) as file:
 
-        for gene_id in passing_ids:
+        writer = csv.writer(
+            file,
+            delimiter="\t",
+            lineterminator="\n"
+        )
 
-            file.write(
-                gene_id + "\n"
-            )
+        # --------------------------------------------------
+        # Header
+        # --------------------------------------------------
+
+        writer.writerow(
+            EXPECTED_COLUMNS
+        )
+
+        # --------------------------------------------------
+        # Passing hits
+        # --------------------------------------------------
+
+        for hit in filtered_rows:
+
+            writer.writerow([
+
+                hit["qseqid"],
+
+                hit["sseqid"],
+
+                hit["pident"],
+
+                hit["length"],
+
+                hit["qlen"],
+
+                hit["slen"],
+
+                hit["qcovs"],
+
+                hit["evalue"],
+
+                hit["bitscore"],
+
+                hit["stitle"],
+
+            ])
 
     print(
-        f"Passing gene IDs saved: "
-        f"{len(passing_ids):,}"
+        "\nFiltered BLAST TSV saved:"
     )
 
     print(
@@ -1229,10 +544,10 @@ def save_passing_ids(
 
 
 # ==========================================================
-# SAVE PASSING FASTA
+# SAVE FILTERED FASTA
 # ==========================================================
 
-def save_passing_fasta(
+def save_filtered_fasta(
     passing_ids,
     sequences,
     output_path
@@ -1240,7 +555,7 @@ def save_passing_fasta(
 
     print(
         "\nCreating FASTA containing "
-        "threshold-passing proteins..."
+        "only BLAST-passing proteins..."
     )
 
     written = 0
@@ -1266,6 +581,10 @@ def save_passing_fasta(
 
                 continue
 
+            # --------------------------------------------------
+            # FASTA header
+            # --------------------------------------------------
+
             file.write(
                 f">{gene_id}\n"
             )
@@ -1290,20 +609,20 @@ def save_passing_fasta(
             written += 1
 
     print(
-        f"Passing FASTA sequences written: "
+        f"Filtered FASTA sequences written: "
         f"{written:,}"
     )
 
     # ------------------------------------------------------
-    # Save missing IDs if any
+    # Missing sequences
     # ------------------------------------------------------
 
     if missing:
 
         print(
-            f"WARNING: {len(missing):,} "
-            "passing IDs were not found "
-            "in the FASTA."
+            f"\nWARNING: {len(missing):,} "
+            "passing BLAST IDs were not found "
+            "in the original FASTA."
         )
 
         base, ext = os.path.splitext(
@@ -1327,7 +646,7 @@ def save_passing_fasta(
                 )
 
         print(
-            "Missing IDs saved:"
+            "\nMissing IDs saved:"
         )
 
         print(
@@ -1335,7 +654,7 @@ def save_passing_fasta(
         )
 
     print(
-        "\nPassing FASTA saved:"
+        "\nFiltered FASTA saved:"
     )
 
     print(
@@ -1344,380 +663,26 @@ def save_passing_fasta(
 
 
 # ==========================================================
-# SAVE EXCEL
+# PRINT SUMMARY
 # ==========================================================
 
-def save_screening_excel(
-    results,
-    output_path
+def print_summary(
+    original_rows,
+    filtered_rows,
+    passing_ids,
+    sequences,
+    output_dir,
+    filtered_blast_file,
+    filtered_fasta_file
 ):
 
-    print(
-        "\nCreating Excel screening file..."
-    )
+    missing_count = 0
 
-    fieldnames = [
+    for gene_id in passing_ids:
 
-        "Gene_ID",
+        if gene_id not in sequences:
 
-        "Best_Hit",
-
-        "Best_Hit_Species",
-
-        "Best_Hit_Classification",
-
-        "Best_Hit_Source",
-
-        "Best_Hit_Identity",
-
-        "Best_Hit_Coverage",
-
-        "Best_Hit_E_value",
-
-        "Total_Hits",
-
-        "Qualifying_Hits",
-
-        "Arthropod_Hits",
-
-        "Bacterial_Hits",
-
-        "Fungal_Hits",
-
-        "Other_Non_Arthropod_Hits",
-
-        "Unknown_Hits",
-
-        "Action",
-
-    ]
-
-    # ------------------------------------------------------
-    # Create workbook
-    # ------------------------------------------------------
-
-    workbook = Workbook()
-
-    worksheet = workbook.active
-
-    worksheet.title = "Taxonomy Screening"
-
-    # ------------------------------------------------------
-    # Header
-    # ------------------------------------------------------
-
-    for column_number, fieldname in enumerate(
-        fieldnames,
-        start=1
-    ):
-
-        cell = worksheet.cell(
-            row=1,
-            column=column_number,
-            value=fieldname
-        )
-
-        cell.font = Font(
-            bold=True
-        )
-
-        cell.alignment = Alignment(
-            horizontal="center",
-            vertical="center"
-        )
-
-    # ------------------------------------------------------
-    # Data
-    # ------------------------------------------------------
-
-    for row_number, result in enumerate(
-        results,
-        start=2
-    ):
-
-        for column_number, fieldname in enumerate(
-            fieldnames,
-            start=1
-        ):
-
-            worksheet.cell(
-                row=row_number,
-                column=column_number,
-                value=result.get(
-                    fieldname,
-                    ""
-                )
-            )
-
-    worksheet.freeze_panes = "A2"
-
-    # ------------------------------------------------------
-    # Excel filter
-    # ------------------------------------------------------
-
-    last_column = get_column_letter(
-        len(fieldnames)
-    )
-
-    last_row = len(results) + 1
-
-    worksheet.auto_filter.ref = (
-        f"A1:{last_column}{last_row}"
-    )
-
-    # ------------------------------------------------------
-    # Column widths
-    # ------------------------------------------------------
-
-    for column_number, fieldname in enumerate(
-        fieldnames,
-        start=1
-    ):
-
-        column_letter = get_column_letter(
-            column_number
-        )
-
-        if fieldname == "Best_Hit":
-
-            width = 35
-
-        elif fieldname == "Best_Hit_Species":
-
-            width = 25
-
-        elif fieldname == "Action":
-
-            width = 32
-
-        elif fieldname == "Gene_ID":
-
-            width = 18
-
-        else:
-
-            width = max(
-                len(fieldname) + 2,
-                15
-            )
-
-        worksheet.column_dimensions[
-            column_letter
-        ].width = width
-
-    # ------------------------------------------------------
-    # Number formats
-    # ------------------------------------------------------
-
-    identity_column = (
-        fieldnames.index(
-            "Best_Hit_Identity"
-        ) + 1
-    )
-
-    coverage_column = (
-        fieldnames.index(
-            "Best_Hit_Coverage"
-        ) + 1
-    )
-
-    evalue_column = (
-        fieldnames.index(
-            "Best_Hit_E_value"
-        ) + 1
-    )
-
-    for row_number in range(
-        2,
-        last_row + 1
-    ):
-
-        worksheet.cell(
-            row=row_number,
-            column=identity_column
-        ).number_format = "0.000"
-
-        worksheet.cell(
-            row=row_number,
-            column=coverage_column
-        ).number_format = "0.00"
-
-        worksheet.cell(
-            row=row_number,
-            column=evalue_column
-        ).number_format = "0.00E+00"
-
-    # ------------------------------------------------------
-    # Save
-    # ------------------------------------------------------
-
-    workbook.save(
-        output_path
-    )
-
-    print(
-        "\nExcel screening result saved:"
-    )
-
-    print(
-        output_path
-    )
-
-
-# ==========================================================
-# SAVE SUMMARY TXT
-# ==========================================================
-
-def save_summary(
-    results,
-    output_path
-):
-
-    classification_counts = Counter(
-
-        row[
-            "Best_Hit_Classification"
-        ]
-
-        for row in results
-
-    )
-
-    action_counts = Counter(
-
-        row[
-            "Action"
-        ]
-
-        for row in results
-
-    )
-
-    total = len(results)
-
-    passing = sum(
-        1
-        for row in results
-        if row["Qualifying_Hits"] > 0
-    )
-
-    no_passing = (
-        total - passing
-    )
-
-    with open(
-        output_path,
-        "w",
-        encoding="utf-8"
-    ) as file:
-
-        file.write(
-            "METISA PLANA TAXONOMY SCREENING SUMMARY\n"
-        )
-
-        file.write(
-            "=" * 60 + "\n\n"
-        )
-
-        file.write(
-            "BLAST thresholds:\n"
-        )
-
-        file.write(
-            f"Identity >= {MIN_IDENTITY}%\n"
-        )
-
-        file.write(
-            f"Coverage >= {MIN_COVERAGE}%\n"
-        )
-
-        file.write(
-            f"E-value <= {MAX_EVALUE}\n\n"
-        )
-
-        file.write(
-            f"Sequences screened: "
-            f"{total:,}\n"
-        )
-
-        file.write(
-            f"Sequences passing threshold: "
-            f"{passing:,}\n"
-        )
-
-        file.write(
-            f"Sequences without qualifying hit: "
-            f"{no_passing:,}\n\n"
-        )
-
-        file.write(
-            "Best-hit classifications:\n"
-        )
-
-        for classification, count in (
-            classification_counts.items()
-        ):
-
-            file.write(
-                f"  {classification}: "
-                f"{count:,}\n"
-            )
-
-        file.write(
-            "\nActions:\n"
-        )
-
-        for action, count in (
-            action_counts.items()
-        ):
-
-            file.write(
-                f"  {action}: "
-                f"{count:,}\n"
-            )
-
-    print(
-        "\nScreening summary saved:"
-    )
-
-    print(
-        output_path
-    )
-
-
-# ==========================================================
-# TERMINAL SUMMARY
-# ==========================================================
-
-def print_summary(results):
-
-    classification_counts = Counter(
-
-        row[
-            "Best_Hit_Classification"
-        ]
-
-        for row in results
-
-    )
-
-    action_counts = Counter(
-
-        row[
-            "Action"
-        ]
-
-        for row in results
-
-    )
-
-    total = len(results)
-
-    passing = sum(
-        1
-        for row in results
-        if row["Qualifying_Hits"] > 0
-    )
+            missing_count += 1
 
     print(
         "\n"
@@ -1725,7 +690,7 @@ def print_summary(results):
     )
 
     print(
-        "TAXONOMY SCREEN SUMMARY"
+        "BLAST FILTER SUMMARY"
     )
 
     print(
@@ -1733,69 +698,79 @@ def print_summary(results):
     )
 
     print(
-        f"Sequences screened: "
-        f"{total:,}"
+        "\nThresholds:"
     )
 
     print(
-        f"Passed BLAST threshold: "
-        f"{passing:,}"
+        f"  Identity  >= {MIN_IDENTITY}%"
     )
 
     print(
-        f"Did not pass threshold: "
-        f"{total - passing:,}"
+        f"  Coverage  >= {MIN_COVERAGE}%"
     )
 
     print(
-        f"\nArthropod best hits: "
-        f"{classification_counts.get('Arthropod', 0):,}"
+        f"  E-value   <= {MAX_EVALUE}"
     )
 
     print(
-        f"Bacterial best hits: "
-        f"{classification_counts.get('Bacterial', 0):,}"
+        "\nResults:"
     )
 
     print(
-        f"Fungal best hits: "
-        f"{classification_counts.get('Fungal', 0):,}"
+        f"  Original BLAST hits:     "
+        f"{len(original_rows):,}"
     )
 
     print(
-        f"Archaeal best hits: "
-        f"{classification_counts.get('Archaeal', 0):,}"
+        f"  Filtered BLAST hits:     "
+        f"{len(filtered_rows):,}"
     )
 
     print(
-        f"Plant best hits: "
-        f"{classification_counts.get('Plant', 0):,}"
+        f"  Unique passing proteins: "
+        f"{len(passing_ids):,}"
     )
 
     print(
-        f"Other non-arthropod: "
-        f"{classification_counts.get('Other non-arthropod', 0):,}"
+        f"  FASTA sequences written:  "
+        f"{len(passing_ids) - missing_count:,}"
     )
 
-    print(
-        f"Unknown: "
-        f"{classification_counts.get('Unknown', 0):,}"
-    )
-
-    print(
-        f"No qualifying hit: "
-        f"{classification_counts.get('No qualifying hit', 0):,}"
-    )
-
-    print(
-        "\nActions:"
-    )
-
-    for action, count in action_counts.items():
+    if missing_count:
 
         print(
-            f"  {action}: {count:,}"
+            f"  Missing FASTA sequences:  "
+            f"{missing_count:,}"
         )
+
+    print(
+        "\nOutput files:"
+    )
+
+    print(
+        f"  Filtered BLAST:"
+    )
+
+    print(
+        f"    {filtered_blast_file}"
+    )
+
+    print(
+        f"\n  Filtered FASTA:"
+    )
+
+    print(
+        f"    {filtered_fasta_file}"
+    )
+
+    print(
+        "\nOutput folder:"
+    )
+
+    print(
+        f"  {output_dir}"
+    )
 
 
 # ==========================================================
@@ -1810,11 +785,23 @@ def main():
     )
 
     print(
-        "       METISA PLANA TAXONOMY SCREEN"
+        "       METISA PLANA BLAST FILTER"
     )
 
     print(
         "=" * 65
+    )
+
+    print(
+        "\nThis program performs ONLY BLAST threshold filtering."
+    )
+
+    print(
+        "Taxonomy screening is NOT performed."
+    )
+
+    print(
+        "InterPro annotation is NOT performed."
     )
 
     # ======================================================
@@ -1827,7 +814,7 @@ def main():
 
     blast_file = expand_path(
         input(
-            "Path to BLAST TSV result: "
+            "\nPath to BLAST TSV result: "
         )
     )
 
@@ -1847,7 +834,7 @@ def main():
 
     fasta_file = expand_path(
         input(
-            "Path to original protein FASTA: "
+            "\nPath to original protein FASTA: "
         )
     )
 
@@ -1858,41 +845,44 @@ def main():
         return
 
     # ======================================================
-    # STEP 3: NCBI TAXONOMY
+    # STEP 3: OUTPUT DIRECTORY
+    # ======================================================
+    #
+    # SAME DIRECTORY AS BLAST INPUT
     # ======================================================
 
-    taxonomy_file = ask_taxonomy_path()
-
-    if not taxonomy_file:
-
-        return
-
-    # ======================================================
-    # STEP 4: LOAD TAXONOMY
-    # ======================================================
-
-    print(
-        "\nSTEP 4: LOADING TAXONOMY"
+    output_dir = os.path.dirname(
+        blast_file
     )
 
-    taxonomy = load_ranked_lineage(
-        taxonomy_file
+    # ======================================================
+    # STEP 4: OUTPUT NAME
+    # ======================================================
+
+    output_name = ask_output_name(
+        output_dir
     )
 
-    if not taxonomy:
+    # ======================================================
+    # OUTPUT PATHS
+    # ======================================================
 
-        print(
-            "\nERROR: No taxonomy records loaded."
-        )
+    filtered_blast_file = os.path.join(
+        output_dir,
+        f"{output_name}_filtered_blast.tsv"
+    )
 
-        return
+    filtered_fasta_file = os.path.join(
+        output_dir,
+        f"{output_name}_filtered.fasta"
+    )
 
     # ======================================================
     # STEP 5: READ BLAST
     # ======================================================
 
     print(
-        "\nSTEP 5: READING BLAST"
+        "\nSTEP 3: READING BLAST"
     )
 
     rows = read_blast_file(
@@ -1908,11 +898,11 @@ def main():
         return
 
     # ======================================================
-    # STEP 6: READ FASTA
+    # STEP 6: READ ORIGINAL FASTA
     # ======================================================
 
     print(
-        "\nSTEP 6: READING FASTA"
+        "\nSTEP 4: READING ORIGINAL FASTA"
     )
 
     sequences = read_fasta(
@@ -1928,15 +918,15 @@ def main():
         return
 
     # ======================================================
-    # STEP 7: SCREEN
+    # STEP 7: FILTER BLAST
     # ======================================================
 
     print(
-        "\nSTEP 7: THRESHOLD + TAXONOMY SCREENING"
+        "\nSTEP 5: BLAST QUALITY FILTER"
     )
 
     print(
-        "\nUsing thresholds:"
+        "\nThresholds:"
     )
 
     print(
@@ -1948,142 +938,85 @@ def main():
     )
 
     print(
-        f"  E-value <= {MAX_EVALUE}"
+        f"  E-value  <= {MAX_EVALUE}"
     )
 
-    results = screen_contamination(
-        rows,
-        taxonomy
+    filtered_rows = filter_blast_hits(
+        rows
     )
 
-    if not results:
+    # ======================================================
+    # SAVE FILTERED BLAST
+    # ======================================================
+
+    save_filtered_blast(
+        filtered_rows,
+        filtered_blast_file
+    )
+
+    # ======================================================
+    # STOP IF NOTHING PASSED
+    # ======================================================
+
+    if not filtered_rows:
 
         print(
-            "\nERROR: No screening results."
+            "\nNO BLAST HITS PASSED THE THRESHOLD."
+        )
+
+        print(
+            "\nNo filtered FASTA can be created."
         )
 
         return
 
     # ======================================================
-    # OUTPUT DIRECTORY
+    # STEP 6: GET UNIQUE PASSING PROTEINS
     # ======================================================
 
-    output_dir = os.path.join(
-
-        os.path.dirname(
-            blast_file
-        ),
-
-        "taxonomy_screen"
-
+    print(
+        "\nSTEP 6: SELECTING PASSING PROTEINS"
     )
-
-    os.makedirs(
-        output_dir,
-        exist_ok=True
-    )
-
-    # ======================================================
-    # ASK FOR UNIQUE OUTPUT NAME
-    # ======================================================
-
-    output_name = ask_output_name(
-        output_dir
-    )
-
-    # ======================================================
-    # GET PASSING IDS
-    # ======================================================
 
     passing_ids = get_passing_gene_ids(
-        results
+        filtered_rows
     )
 
     print(
-        "\n"
-        + "=" * 65
-    )
-
-    print(
-        f"Genes passing BLAST threshold: "
+        f"Unique proteins passing BLAST filter: "
         f"{len(passing_ids):,}"
     )
 
+    # ======================================================
+    # STEP 7: CREATE FILTERED FASTA
+    # ======================================================
+
     print(
-        "=" * 65
+        "\nSTEP 7: CREATING FILTERED FASTA"
     )
 
-    # ======================================================
-    # OUTPUT FILES
-    # ======================================================
-
-    excel_file = os.path.join(
-        output_dir,
-        f"{output_name}.xlsx"
-    )
-
-    fasta_output = os.path.join(
-        output_dir,
-        f"{output_name}_pass.fasta"
-    )
-
-    ids_output = os.path.join(
-        output_dir,
-        f"{output_name}_pass_ids.txt"
-    )
-
-    summary_output = os.path.join(
-        output_dir,
-        f"{output_name}_summary.txt"
-    )
-
-    # ======================================================
-    # SAVE EXCEL
-    # ======================================================
-
-    save_screening_excel(
-        results,
-        excel_file
-    )
-
-    # ======================================================
-    # SAVE PASSING IDS
-    # ======================================================
-
-    save_passing_ids(
-        passing_ids,
-        ids_output
-    )
-
-    # ======================================================
-    # SAVE PASSING FASTA
-    # ======================================================
-
-    save_passing_fasta(
+    save_filtered_fasta(
         passing_ids,
         sequences,
-        fasta_output
+        filtered_fasta_file
     )
 
     # ======================================================
-    # SAVE SUMMARY
-    # ======================================================
-
-    save_summary(
-        results,
-        summary_output
-    )
-
-    # ======================================================
-    # TERMINAL SUMMARY
+    # SUMMARY
     # ======================================================
 
     print_summary(
-        results
+        original_rows=rows,
+        filtered_rows=filtered_rows,
+        passing_ids=passing_ids,
+        sequences=sequences,
+        output_dir=output_dir,
+        filtered_blast_file=filtered_blast_file,
+        filtered_fasta_file=filtered_fasta_file
     )
 
     # ======================================================
-    # FINISH
+    # DONE
     # ======================================================
 
     print(
@@ -2100,31 +1033,7 @@ def main():
     )
 
     print(
-        "\nOutput folder:"
-    )
-
-    print(
-        output_dir
-    )
-
-    print(
-        "\nOutput files:"
-    )
-
-    print(
-        f"  Excel:   {excel_file}"
-    )
-
-    print(
-        f"  FASTA:   {fasta_output}"
-    )
-
-    print(
-        f"  IDs:     {ids_output}"
-    )
-
-    print(
-        f"  Summary: {summary_output}"
+        "\nThe filtered FASTA is ready for InterProScan."
     )
 
 
