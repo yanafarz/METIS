@@ -1,0 +1,37 @@
+METISA PLANA BLAST CONTAMINATION SCREENING
+=================================================================
+
+INPUT BLAST FILE
+-----------------------------------------------------------------
+D:\UKM\YEAR 3\SEMESTER 5\BIOHACKATHON MAIN\BioHackathon\notebooks\output\metisa_split_4_uniprot_blast_filtered.tsv
+
+CONTAMINATION SCREENING THRESHOLDS
+-----------------------------------------------------------------
+Minimum identity: 30.0%
+Minimum query coverage: 70.0%
+Maximum E-value: 0.05
+
+RESULTS
+-----------------------------------------------------------------
+Queries screened: 2,317
+
+ORGANISM CLASSIFICATION
+-----------------------------------------------------------------
+Arthropod: 755 (32.59%)
+Bacterial: 105 (4.53%)
+Fungal: 21 (0.91%)
+Other non-arthropod: 1,436 (61.98%)
+Unknown: 0 (0.00%)
+No qualifying hit: 0 (0.00%)
+
+QC DECISIONS
+-----------------------------------------------------------------
+KEEP: 755 (32.59%)
+FLAG_REVIEW: 1,436 (61.98%)
+FLAG_POSSIBLE_CONTAMINATION: 126 (5.44%)
+
+IMPORTANT INTERPRETATION
+-----------------------------------------------------------------
+Bacterial and fungal classifications are possible contamination flags, not confirmed contamination.
+Flagged sequences should be manually reviewed before removal.
+The organism classification is based on the BLAST subject description and keyword screening.
