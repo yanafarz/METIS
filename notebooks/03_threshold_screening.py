@@ -3,6 +3,7 @@ import re
 import csv
 from collections import defaultdict, Counter
 
+
 # ============================================================
 # CONFIGURATION
 # ============================================================
@@ -24,10 +25,11 @@ CATEGORIES = {
     1: "KEEP_ARTHROPOD",
     2: "POSSIBLE_BACTERIAL",
     3: "POSSIBLE_FUNGAL",
-    4: "OTHER_EUKARYOTE",
-    5: "AMBIGUOUS",
-    6: "NO_QUALIFYING_HIT",
-    7: "UNKNOWN_TAXONOMY",
+    4: "NON_ARTHROPOD_EUKARYOTE",
+    5: "OTHER_PROKARYOTE",
+    6: "AMBIGUOUS",
+    7: "NO_QUALIFYING_HIT",
+    8: "UNKNOWN_TAXONOMY",
 }
 
 
@@ -36,6 +38,7 @@ CATEGORIES = {
 # ============================================================
 
 def expand_path(path):
+
     return os.path.abspath(
         os.path.expanduser(
             path.strip().strip('"')
@@ -195,7 +198,7 @@ def apply_quality_filter(rows):
 
 
 # ============================================================
-# EXTRACT NCBI TAXON ID
+# EXTRACT NCBI TAXID
 # ============================================================
 
 def extract_taxid(stitle):
@@ -413,12 +416,28 @@ def classify_taxonomy(tax_record):
         return "ARTHROPOD"
 
     # --------------------------------------------------------
-    # OTHER EUKARYOTE
+    # OTHER EUKARYOTES
+    #
+    # This means:
+    # Eukaryotic organisms that are NOT:
+    #   - Arthropods
+    #   - Fungi
+    #
+    # Examples:
+    #   mammals
+    #   plants
+    #   nematodes
+    #   fish
+    #   other animals
     # --------------------------------------------------------
 
     if superkingdom == "eukaryota":
 
-        return "OTHER_EUKARYOTE"
+        return "NON_ARTHROPOD_EUKARYOTE"
+
+    # --------------------------------------------------------
+    # EVERYTHING ELSE
+    # --------------------------------------------------------
 
     return "OTHER"
 
@@ -517,10 +536,7 @@ def make_decision(
     )
 
     # ========================================================
-    # IMPORTANT:
-    # ZERO QUALIFYING HITS = IMMEDIATELY NO_QUALIFYING_HIT
-    #
-    # Taxonomy is NEVER consulted for failed hits.
+    # ZERO QUALIFYING HITS
     # ========================================================
 
     if total == 0:
@@ -551,7 +567,7 @@ def make_decision(
         )
 
     # --------------------------------------------------------
-    # SINGLE QUALIFYING HIT
+    # TOO FEW HITS
     # --------------------------------------------------------
 
     if (
@@ -586,8 +602,19 @@ def make_decision(
         / total
     )
 
-    other_euk_fraction = (
-        counts.get("OTHER_EUKARYOTE", 0)
+    non_arthropod_euk_fraction = (
+        counts.get(
+            "NON_ARTHROPOD_EUKARYOTE",
+            0
+        )
+        / total
+    )
+
+    other_prokaryote_fraction = (
+        counts.get(
+            "OTHER_PROKARYOTE",
+            0
+        )
         / total
     )
 
@@ -640,23 +667,39 @@ def make_decision(
         )
 
     # --------------------------------------------------------
-    # OTHER EUKARYOTE
+    # NON-ARTHROPOD EUKARYOTE
     # --------------------------------------------------------
 
     if (
-        other_euk_fraction
+        non_arthropod_euk_fraction
         >= DOMINANCE_THRESHOLD
     ):
 
         return (
-            "OTHER_EUKARYOTE",
-            f"Other-eukaryote support "
-            f"{other_euk_fraction:.1%} "
+            "NON_ARTHROPOD_EUKARYOTE",
+            f"Non-arthropod eukaryote support "
+            f"{non_arthropod_euk_fraction:.1%} "
             f"of qualifying hits."
         )
 
     # --------------------------------------------------------
-    # MIXED
+    # OTHER PROKARYOTE
+    # --------------------------------------------------------
+
+    if (
+        other_prokaryote_fraction
+        >= DOMINANCE_THRESHOLD
+    ):
+
+        return (
+            "OTHER_PROKARYOTE",
+            f"Other-prokaryote support "
+            f"{other_prokaryote_fraction:.1%} "
+            f"of qualifying hits."
+        )
+
+    # --------------------------------------------------------
+    # MIXED / AMBIGUOUS
     # --------------------------------------------------------
 
     return (
@@ -696,7 +739,6 @@ def screen_proteins(
     for query_id, hits in grouped.items():
 
         # ====================================================
-        # FIRST AND ONLY FIRST:
         # QUALITY FILTER
         # ====================================================
 
@@ -762,7 +804,7 @@ def screen_proteins(
                 "fungal_hits":
                     0,
 
-                "other_eukaryote_hits":
+                "non_arthropod_eukaryote_hits":
                     0,
 
                 "other_prokaryote_hits":
@@ -778,6 +820,12 @@ def screen_proteins(
                     0,
 
                 "fungal_fraction":
+                    0,
+
+                "non_arthropod_eukaryote_fraction":
+                    0,
+
+                "other_prokaryote_fraction":
                     0,
 
                 "classification":
@@ -904,9 +952,9 @@ def screen_proteins(
                     0
                 ),
 
-            "other_eukaryote_hits":
+            "non_arthropod_eukaryote_hits":
                 counts.get(
-                    "OTHER_EUKARYOTE",
+                    "NON_ARTHROPOD_EUKARYOTE",
                     0
                 ),
 
@@ -944,6 +992,24 @@ def screen_proteins(
                 (
                     counts.get(
                         "FUNGAL",
+                        0
+                    )
+                    / total
+                ),
+
+            "non_arthropod_eukaryote_fraction":
+                (
+                    counts.get(
+                        "NON_ARTHROPOD_EUKARYOTE",
+                        0
+                    )
+                    / total
+                ),
+
+            "other_prokaryote_fraction":
+                (
+                    counts.get(
+                        "OTHER_PROKARYOTE",
                         0
                     )
                     / total
@@ -1379,7 +1445,7 @@ def ask_categories():
     )
 
     print(
-        "Example: 1,5"
+        "Example: 1,6"
     )
 
     print(
@@ -1411,7 +1477,7 @@ def ask_categories():
         except ValueError:
 
             print(
-                "Invalid input. Use numbers such as 1,5."
+                "Invalid input. Use numbers such as 1,6."
             )
 
             continue
@@ -1530,7 +1596,7 @@ def export_selected_fasta(
         )
 
     print(
-        f"\nFASTA saved:"
+        "\nFASTA saved:"
     )
 
     print(
@@ -1570,7 +1636,8 @@ def print_summary(results):
         "KEEP_ARTHROPOD",
         "POSSIBLE_BACTERIAL",
         "POSSIBLE_FUNGAL",
-        "OTHER_EUKARYOTE",
+        "NON_ARTHROPOD_EUKARYOTE",
+        "OTHER_PROKARYOTE",
         "AMBIGUOUS",
         "NO_QUALIFYING_HIT",
         "UNKNOWN_TAXONOMY",
@@ -1588,7 +1655,7 @@ def print_summary(results):
         )
 
         print(
-            f"{category:25s} "
+            f"{category:30s} "
             f"{count:8,} "
             f"({percentage:6.2f}%)"
         )
@@ -1632,7 +1699,7 @@ def ask_output_name():
         ).strip()
 
         name = re.sub(
-            r"[<>:\"/\\|?*]",
+            r'[<>:"/\\|?*]',
             "_",
             name
         )
@@ -1700,6 +1767,42 @@ def main():
     )
 
     print(
+        "\nTaxonomic categories:"
+    )
+
+    print(
+        "  KEEP_ARTHROPOD"
+    )
+
+    print(
+        "  POSSIBLE_BACTERIAL"
+    )
+
+    print(
+        "  POSSIBLE_FUNGAL"
+    )
+
+    print(
+        "  NON_ARTHROPOD_EUKARYOTE"
+    )
+
+    print(
+        "  OTHER_PROKARYOTE"
+    )
+
+    print(
+        "  AMBIGUOUS"
+    )
+
+    print(
+        "  NO_QUALIFYING_HIT"
+    )
+
+    print(
+        "  UNKNOWN_TAXONOMY"
+    )
+
+    print(
         "\nThresholds:"
     )
 
@@ -1718,6 +1821,11 @@ def main():
     print(
         f"  Taxonomic dominance >= "
         f"{DOMINANCE_THRESHOLD:.0%}"
+    )
+
+    print(
+        f"  Minimum qualifying hits for strong classification = "
+        f"{MIN_HITS_FOR_STRONG_CLASSIFICATION}"
     )
 
     # ========================================================
@@ -1793,7 +1901,7 @@ def main():
         )
 
         print(
-            f"Output folder already exists:"
+            "Output folder already exists:"
         )
 
         print(
@@ -1856,9 +1964,6 @@ def main():
 
     # ========================================================
     # SAVE FILTERED BLAST
-    #
-    # This is useful for checking exactly which hits
-    # survived the three thresholds.
     # ========================================================
 
     filtered_blast_path = os.path.join(
@@ -1927,10 +2032,6 @@ def main():
 
     # ========================================================
     # SCREEN ALL PROTEINS
-    #
-    # Raw proteins are grouped here so that proteins with
-    # zero qualifying hits are retained as
-    # NO_QUALIFYING_HIT.
     # ========================================================
 
     results = screen_proteins(
@@ -2067,4 +2168,5 @@ def main():
 # ============================================================
 
 if __name__ == "__main__":
+
     main()
