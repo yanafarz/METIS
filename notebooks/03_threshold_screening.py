@@ -14,6 +14,9 @@ MAX_EVALUE = 0.05
 
 DOMINANCE_THRESHOLD = 0.70
 
+# This is NOT the required number of BLAST hits.
+# It only means that >=2 qualifying hits are preferred
+# before calling a taxonomic classification strong.
 MIN_HITS_FOR_STRONG_CLASSIFICATION = 2
 
 
@@ -148,7 +151,7 @@ def passes_quality_filter(hit):
 
 
 # ============================================================
-# APPLY QUALITY FILTER FIRST
+# APPLY QUALITY FILTER
 # ============================================================
 
 def apply_quality_filter(rows):
@@ -417,18 +420,6 @@ def classify_taxonomy(tax_record):
 
     # --------------------------------------------------------
     # OTHER EUKARYOTES
-    #
-    # This means:
-    # Eukaryotic organisms that are NOT:
-    #   - Arthropods
-    #   - Fungi
-    #
-    # Examples:
-    #   mammals
-    #   plants
-    #   nematodes
-    #   fish
-    #   other animals
     # --------------------------------------------------------
 
     if superkingdom == "eukaryota":
@@ -443,7 +434,7 @@ def classify_taxonomy(tax_record):
 
 
 # ============================================================
-# GROUP QUALIFYING HITS BY QUERY
+# GROUP RAW HITS BY QUERY
 # ============================================================
 
 def group_hits_by_query(rows):
@@ -513,10 +504,15 @@ def calculate_taxonomic_support(
         counts[tax_class] += 1
 
         classified_hits.append({
+
             "hit": hit,
+
             "taxid": taxid,
+
             "taxonomy": tax_record,
+
             "tax_class": tax_class,
+
         })
 
     return counts, classified_hits
@@ -530,6 +526,10 @@ def make_decision(
     qualifying_hits,
     counts
 ):
+
+    # IMPORTANT:
+    # This uses the ACTUAL number of qualifying hits.
+    # It does NOT assume 5, 7, 10, 20, or 40 hits.
 
     total = len(
         qualifying_hits
@@ -546,17 +546,20 @@ def make_decision(
             "No BLAST hit passed all three quality thresholds."
         )
 
-    # --------------------------------------------------------
-    # UNKNOWN TAXONOMY
-    # --------------------------------------------------------
+    # ========================================================
+    # KNOWN TAXONOMY
+    # ========================================================
 
-    known = (
-        total
-        - counts.get(
-            "UNKNOWN_TAXONOMY",
-            0
-        )
+    unknown = counts.get(
+        "UNKNOWN_TAXONOMY",
+        0
     )
+
+    known = total - unknown
+
+    # --------------------------------------------------------
+    # ALL QUALIFYING HITS HAVE UNKNOWN TAXONOMY
+    # --------------------------------------------------------
 
     if known == 0:
 
@@ -566,40 +569,58 @@ def make_decision(
             "but taxonomy could not be resolved."
         )
 
-    # --------------------------------------------------------
-    # TOO FEW HITS
-    # --------------------------------------------------------
+    # ========================================================
+    # TOO FEW QUALIFYING HITS
+    #
+    # This does NOT mean the BLAST search had too few hits.
+    # It means too few hits actually passed the filters.
+    # ========================================================
 
-    if (
-        total
-        < MIN_HITS_FOR_STRONG_CLASSIFICATION
-    ):
+    if total < MIN_HITS_FOR_STRONG_CLASSIFICATION:
+
+        # If there is only one qualifying hit, we can still
+        # report it, but call the classification ambiguous
+        # rather than pretending it is strongly supported.
 
         return (
             "AMBIGUOUS",
-            "Only one qualifying BLAST hit; "
-            "strong taxonomic classification requires "
-            f"{MIN_HITS_FOR_STRONG_CLASSIFICATION} "
-            "qualifying hits."
+            f"Only {total} qualifying BLAST hit(s) "
+            f"were available. "
+            f"At least {MIN_HITS_FOR_STRONG_CLASSIFICATION} "
+            f"qualifying hits are preferred for strong "
+            f"taxonomic classification."
         )
 
-    # --------------------------------------------------------
-    # TAXONOMIC FRACTIONS
-    # --------------------------------------------------------
+    # ========================================================
+    # IMPORTANT:
+    #
+    # Taxonomic dominance should be calculated from KNOWN
+    # taxonomy hits, not from UNKNOWN_TAXONOMY hits.
+    #
+    # Example:
+    #
+    # 5 qualifying hits
+    # 4 Arthropod
+    # 1 Unknown
+    #
+    # Arthropod support = 4 / 4 = 100%
+    #
+    # NOT 4 / 5 = 80%.
+    # ========================================================
 
     arthropod_fraction = (
         counts.get("ARTHROPOD", 0)
-        / total
+        / known
     )
 
     bacterial_fraction = (
         counts.get("BACTERIAL", 0)
-        / total
+        / known
     )
 
     fungal_fraction = (
         counts.get("FUNGAL", 0)
-        / total
+        / known
     )
 
     non_arthropod_euk_fraction = (
@@ -607,7 +628,7 @@ def make_decision(
             "NON_ARTHROPOD_EUKARYOTE",
             0
         )
-        / total
+        / known
     )
 
     other_prokaryote_fraction = (
@@ -615,12 +636,12 @@ def make_decision(
             "OTHER_PROKARYOTE",
             0
         )
-        / total
+        / known
     )
 
-    # --------------------------------------------------------
+    # ========================================================
     # ARTHROPOD
-    # --------------------------------------------------------
+    # ========================================================
 
     if (
         arthropod_fraction
@@ -631,12 +652,12 @@ def make_decision(
             "KEEP_ARTHROPOD",
             f"Arthropod support "
             f"{arthropod_fraction:.1%} "
-            f"of qualifying hits."
+            f"of taxonomically resolved qualifying hits."
         )
 
-    # --------------------------------------------------------
+    # ========================================================
     # BACTERIAL
-    # --------------------------------------------------------
+    # ========================================================
 
     if (
         bacterial_fraction
@@ -647,12 +668,12 @@ def make_decision(
             "POSSIBLE_BACTERIAL",
             f"Bacterial support "
             f"{bacterial_fraction:.1%} "
-            f"of qualifying hits."
+            f"of taxonomically resolved qualifying hits."
         )
 
-    # --------------------------------------------------------
+    # ========================================================
     # FUNGAL
-    # --------------------------------------------------------
+    # ========================================================
 
     if (
         fungal_fraction
@@ -663,12 +684,12 @@ def make_decision(
             "POSSIBLE_FUNGAL",
             f"Fungal support "
             f"{fungal_fraction:.1%} "
-            f"of qualifying hits."
+            f"of taxonomically resolved qualifying hits."
         )
 
-    # --------------------------------------------------------
+    # ========================================================
     # NON-ARTHROPOD EUKARYOTE
-    # --------------------------------------------------------
+    # ========================================================
 
     if (
         non_arthropod_euk_fraction
@@ -679,12 +700,12 @@ def make_decision(
             "NON_ARTHROPOD_EUKARYOTE",
             f"Non-arthropod eukaryote support "
             f"{non_arthropod_euk_fraction:.1%} "
-            f"of qualifying hits."
+            f"of taxonomically resolved qualifying hits."
         )
 
-    # --------------------------------------------------------
+    # ========================================================
     # OTHER PROKARYOTE
-    # --------------------------------------------------------
+    # ========================================================
 
     if (
         other_prokaryote_fraction
@@ -695,17 +716,18 @@ def make_decision(
             "OTHER_PROKARYOTE",
             f"Other-prokaryote support "
             f"{other_prokaryote_fraction:.1%} "
-            f"of qualifying hits."
+            f"of taxonomically resolved qualifying hits."
         )
 
-    # --------------------------------------------------------
+    # ========================================================
     # MIXED / AMBIGUOUS
-    # --------------------------------------------------------
+    # ========================================================
 
     return (
         "AMBIGUOUS",
         "No taxonomic group reached the "
-        f"{DOMINANCE_THRESHOLD:.0%} dominance threshold."
+        f"{DOMINANCE_THRESHOLD:.0%} dominance threshold "
+        "among taxonomically resolved qualifying hits."
     )
 
 
@@ -739,22 +761,26 @@ def screen_proteins(
     for query_id, hits in grouped.items():
 
         # ====================================================
-        # QUALITY FILTER
+        # COUNT ACTUAL RAW HITS
         # ====================================================
 
-        qualifying_hits = [
-            hit
-            for hit in hits
-            if passes_quality_filter(hit)
-        ]
+        total_blast_hits = len(hits)
 
-        qualifying_hits.sort(
-            key=lambda x: (
-                x["evalue"],
-                -x["bitscore"],
-                -x["pident"],
-                -x["qcovs"],
-            )
+        # ====================================================
+        # QUALITY FILTER
+        #
+        # This automatically uses however many hits actually
+        # exist for this protein.
+        #
+        # It does NOT assume 5 / 7 / 10 / 20 / 40.
+        # ====================================================
+
+        qualifying_hits = get_qualifying_hits(
+            hits
+        )
+
+        actual_qualifying_count = len(
+            qualifying_hits
         )
 
         # ====================================================
@@ -795,6 +821,9 @@ def screen_proteins(
                 "qualifying_hits":
                     0,
 
+                "total_blast_hits":
+                    total_blast_hits,
+
                 "arthropod_hits":
                     0,
 
@@ -811,6 +840,9 @@ def screen_proteins(
                     0,
 
                 "unknown_taxonomy_hits":
+                    0,
+
+                "known_taxonomy_hits":
                     0,
 
                 "arthropod_fraction":
@@ -835,10 +867,8 @@ def screen_proteins(
                     "NO_QUALIFYING_HIT",
 
                 "reason":
-                    "No BLAST hit passed all three quality thresholds.",
-
-                "total_blast_hits":
-                    len(hits),
+                    "No BLAST hit passed all three "
+                    "quality thresholds.",
 
                 "best_hit_description":
                     "",
@@ -847,7 +877,7 @@ def screen_proteins(
             continue
 
         # ====================================================
-        # ONLY QUALIFYING HITS REACH THIS POINT
+        # TAXONOMIC SUPPORT
         # ====================================================
 
         counts, classified_hits = (
@@ -856,6 +886,10 @@ def screen_proteins(
                 taxonomy
             )
         )
+
+        # ====================================================
+        # FINAL DECISION
+        # ====================================================
 
         category, reason = make_decision(
             qualifying_hits,
@@ -898,9 +932,78 @@ def screen_proteins(
 
             best_lineage = ""
 
-        total = len(
-            qualifying_hits
+        # ====================================================
+        # ACTUAL TAXONOMY COUNTS
+        # ====================================================
+
+        total = actual_qualifying_count
+
+        unknown_count = counts.get(
+            "UNKNOWN_TAXONOMY",
+            0
         )
+
+        known_count = total - unknown_count
+
+        # ====================================================
+        # FRACTIONS
+        #
+        # Fractions are based on KNOWN taxonomy.
+        # ====================================================
+
+        if known_count > 0:
+
+            arthropod_fraction = (
+                counts.get(
+                    "ARTHROPOD",
+                    0
+                )
+                / known_count
+            )
+
+            bacterial_fraction = (
+                counts.get(
+                    "BACTERIAL",
+                    0
+                )
+                / known_count
+            )
+
+            fungal_fraction = (
+                counts.get(
+                    "FUNGAL",
+                    0
+                )
+                / known_count
+            )
+
+            non_arthropod_euk_fraction = (
+                counts.get(
+                    "NON_ARTHROPOD_EUKARYOTE",
+                    0
+                )
+                / known_count
+            )
+
+            other_prokaryote_fraction = (
+                counts.get(
+                    "OTHER_PROKARYOTE",
+                    0
+                )
+                / known_count
+            )
+
+        else:
+
+            arthropod_fraction = 0
+            bacterial_fraction = 0
+            fungal_fraction = 0
+            non_arthropod_euk_fraction = 0
+            other_prokaryote_fraction = 0
+
+        # ====================================================
+        # SAVE RESULT
+        # ====================================================
 
         results.append({
 
@@ -931,8 +1034,13 @@ def screen_proteins(
             "best_bitscore":
                 best["bitscore"],
 
+            # ACTUAL number of qualifying hits
             "qualifying_hits":
                 total,
+
+            # ACTUAL number of raw hits
+            "total_blast_hits":
+                total_blast_hits,
 
             "arthropod_hits":
                 counts.get(
@@ -965,55 +1073,25 @@ def screen_proteins(
                 ),
 
             "unknown_taxonomy_hits":
-                counts.get(
-                    "UNKNOWN_TAXONOMY",
-                    0
-                ),
+                unknown_count,
+
+            "known_taxonomy_hits":
+                known_count,
 
             "arthropod_fraction":
-                (
-                    counts.get(
-                        "ARTHROPOD",
-                        0
-                    )
-                    / total
-                ),
+                arthropod_fraction,
 
             "bacterial_fraction":
-                (
-                    counts.get(
-                        "BACTERIAL",
-                        0
-                    )
-                    / total
-                ),
+                bacterial_fraction,
 
             "fungal_fraction":
-                (
-                    counts.get(
-                        "FUNGAL",
-                        0
-                    )
-                    / total
-                ),
+                fungal_fraction,
 
             "non_arthropod_eukaryote_fraction":
-                (
-                    counts.get(
-                        "NON_ARTHROPOD_EUKARYOTE",
-                        0
-                    )
-                    / total
-                ),
+                non_arthropod_euk_fraction,
 
             "other_prokaryote_fraction":
-                (
-                    counts.get(
-                        "OTHER_PROKARYOTE",
-                        0
-                    )
-                    / total
-                ),
+                other_prokaryote_fraction,
 
             "classification":
                 category,
@@ -1023,9 +1101,6 @@ def screen_proteins(
 
             "reason":
                 reason,
-
-            "total_blast_hits":
-                len(hits),
 
             "best_hit_description":
                 best["stitle"],
@@ -1747,15 +1822,15 @@ def main():
     )
 
     print(
-        "2. Apply identity / coverage / E-value thresholds"
+        "2. Count the actual BLAST hits for each protein"
     )
 
     print(
-        "3. Hits failing ANY threshold are discarded"
+        "3. Apply identity / coverage / E-value thresholds"
     )
 
     print(
-        "4. Proteins with zero qualifying hits = NO_QUALIFYING_HIT"
+        "4. Use ALL qualifying hits actually present"
     )
 
     print(
@@ -1764,6 +1839,19 @@ def main():
 
     print(
         "6. Generate TSV + Excel + selectable FASTA"
+    )
+
+    print(
+        "\nIMPORTANT:"
+    )
+
+    print(
+        "The script does NOT assume a fixed number of BLAST hits."
+    )
+
+    print(
+        "It works whether each protein has 1, 5, 7, 10, 20, 40, "
+        "or another number of hits."
     )
 
     print(
@@ -1824,7 +1912,7 @@ def main():
     )
 
     print(
-        f"  Minimum qualifying hits for strong classification = "
+        f"  Preferred minimum qualifying hits = "
         f"{MIN_HITS_FOR_STRONG_CLASSIFICATION}"
     )
 
@@ -1953,6 +2041,36 @@ def main():
         return
 
     # ========================================================
+    # COUNT RAW HITS
+    # ========================================================
+
+    raw_grouped = group_hits_by_query(
+        raw_rows
+    )
+
+    print(
+        "\nActual BLAST hit distribution:"
+    )
+
+    hit_counts = Counter(
+        len(hits)
+        for hits in raw_grouped.values()
+    )
+
+    for number_of_hits in sorted(
+        hit_counts
+    ):
+
+        protein_count = hit_counts[
+            number_of_hits
+        ]
+
+        print(
+            f"  {number_of_hits:>4} hit(s): "
+            f"{protein_count:,} protein(s)"
+        )
+
+    # ========================================================
     # APPLY QUALITY FILTER
     # ========================================================
 
@@ -2021,7 +2139,6 @@ def main():
     # ========================================================
     # TAXONOMY
     #
-    # IMPORTANT:
     # Failed hits NEVER reach this step.
     # ========================================================
 
@@ -2149,12 +2266,22 @@ def main():
     )
 
     print(
-        "Failed BLAST hits were NOT used for taxonomy screening."
+        "The number of BLAST hits is determined from the actual "
+        "input file."
+    )
+
+    print(
+        "No fixed hit count such as 5, 7, 10, 20, or 40 is assumed."
     )
 
     print(
         "Only hits passing identity + coverage + E-value "
-        "were used for taxonomy."
+        "are used for taxonomy."
+    )
+
+    print(
+        "Unknown-taxonomy hits are excluded from the denominator "
+        "when calculating taxonomic dominance."
     )
 
     print(
