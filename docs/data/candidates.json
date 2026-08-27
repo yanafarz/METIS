@@ -1,0 +1,662 @@
+{
+  "meta": {
+    "schema_version": "1.0.0",
+    "dataset": "candidates",
+    "generated": "2026-08-28",
+    "is_placeholder": true,
+    "data_status": "PLACEHOLDER — invented ranking in the real schema shape. Replace with the merged team Top-10 before the demo.",
+    "record_count": 10,
+    "scoring": {
+      "method": "Sum of five criteria, each scored 0-20 (max 100).",
+      "criteria": [
+        {
+          "key": "essentiality",
+          "label": "Essentiality",
+          "max": 20,
+          "meaning": "How lethal or crippling is loss of function?"
+        },
+        {
+          "key": "specificity",
+          "label": "Specificity",
+          "max": 20,
+          "meaning": "How divergent from bees, pollinator weevil, parasitoid wasps and vertebrates?"
+        },
+        {
+          "key": "rnai_evidence",
+          "label": "RNAi evidence",
+          "max": 20,
+          "meaning": "Published knockdown phenotype in this or a related species."
+        },
+        {
+          "key": "annotation_confidence",
+          "label": "Annotation confidence",
+          "max": 20,
+          "meaning": "BLAST identity/coverage plus InterPro domain agreement."
+        },
+        {
+          "key": "druggability",
+          "label": "Druggability",
+          "max": 20,
+          "meaning": "Existing chemistry, or a tractable binding site."
+        }
+      ]
+    },
+    "notes": "Every candidate is also present in proteins.json with the same protein_id. The detail modal can render either record with one function."
+  },
+  "candidates": [
+    {
+      "rank": 1,
+      "protein_id": "g04587.t1",
+      "gene_symbol": "Vha68 / V-ATPase-A",
+      "annotation": "V-type proton ATPase catalytic subunit A",
+      "family": "V-type ATPase",
+      "subfamily": "V1 sector subunit A",
+      "category": "digestion_insecticide_target",
+      "contamination_status": "clean_insect",
+      "annotation_source": "blast+interpro",
+      "in_top10": true,
+      "flags": [
+        "rnai_validated_in_related_species"
+      ],
+      "notes": "",
+      "owner": "syaf",
+      "split": 2,
+      "length_aa": 616,
+      "target_class": "lethal_rnai_target",
+      "mechanism": "Acidifies the midgut lumen. Knockdown collapses gut ion transport and nutrient uptake, which is lethal rather than merely sub-lethal.",
+      "why_selected": "The strongest combination of certain lethality and a delivery route that already works: larvae feed constantly on frond tissue, so oral dsRNA reaches the midgut epithelium where this gene is most expressed.",
+      "delivery_strategy": "Oral dsRNA sprayed or trunk-injected",
+      "hit_subject_id": "sp|SAMPLE010|VATA_BOMMO",
+      "hit_organism": "Bombyx mori",
+      "hit_identity": 91.4,
+      "hit_coverage": 99.1,
+      "hit_evalue": 0.0,
+      "hit_bitscore": 1188,
+      "domains": [
+        {
+          "source": "Pfam",
+          "id": "PF00006",
+          "name": "ATP synthase alpha/beta, nucleotide-binding"
+        },
+        {
+          "source": "Pfam",
+          "id": "PF02874",
+          "name": "ATP synthase alpha/beta, beta-barrel"
+        }
+      ],
+      "literature_support": "dsRNA knockdown reported lethal in several lepidopteran and coleopteran pests.",
+      "priority_score": 94.2,
+      "score_breakdown": {
+        "essentiality": 20.0,
+        "specificity": 17.2,
+        "rnai_evidence": 20.0,
+        "annotation_confidence": 19.0,
+        "druggability": 18.0
+      },
+      "confidence": "high",
+      "specificity": {
+        "off_target_status": "pending",
+        "off_target_method": "21-nt sliding window vs beneficial-insect transcriptomes using genes_nucleotide.fasta",
+        "beneficial_conflicts": [],
+        "vertebrate_orthologue": true,
+        "notes": "Protein is conserved, so selectivity has to come from nucleotide-level dsRNA design rather than the protein itself."
+      },
+      "risks": [
+        "Conserved across insects — dsRNA sequence choice does all the selectivity work."
+      ],
+      "next_step": "Design three 200-300 bp dsRNA windows in the least conserved regions, then run the off-target screen."
+    },
+    {
+      "rank": 2,
+      "protein_id": "g23001.t1",
+      "gene_symbol": "snf7 / vps32",
+      "annotation": "Vacuolar protein sorting-associated protein SNF7",
+      "family": "SNF7/ESCRT-III",
+      "subfamily": "SNF7",
+      "category": "other",
+      "contamination_status": "clean_insect",
+      "annotation_source": "blast+interpro",
+      "in_top10": true,
+      "flags": [
+        "rnai_validated_commercially"
+      ],
+      "notes": "",
+      "owner": "lyana",
+      "split": 4,
+      "length_aa": 231,
+      "target_class": "lethal_rnai_target",
+      "mechanism": "ESCRT-III component required for endosomal sorting. Knockdown blocks membrane protein turnover and kills larvae slowly but reliably.",
+      "why_selected": "The most commercially validated insect dsRNA target in existence, and short enough that the whole coding sequence can be scanned for a species-narrow dsRNA window.",
+      "delivery_strategy": "Oral dsRNA",
+      "hit_subject_id": "tr|SAMPLE022|SNF7_HELAM",
+      "hit_organism": "Helicoverpa armigera",
+      "hit_identity": 84.3,
+      "hit_coverage": 97.4,
+      "hit_evalue": 7e-121,
+      "hit_bitscore": 552,
+      "domains": [
+        {
+          "source": "Pfam",
+          "id": "PF03357",
+          "name": "Snf7 family"
+        }
+      ],
+      "literature_support": "Basis of the first approved RNAi trait in a commercial crop (western corn rootworm).",
+      "priority_score": 93.8,
+      "score_breakdown": {
+        "essentiality": 19.0,
+        "specificity": 18.8,
+        "rnai_evidence": 20.0,
+        "annotation_confidence": 18.0,
+        "druggability": 18.0
+      },
+      "confidence": "high",
+      "specificity": {
+        "off_target_status": "pending",
+        "off_target_method": "21-nt sliding window vs beneficial-insect transcriptomes",
+        "beneficial_conflicts": [],
+        "vertebrate_orthologue": true,
+        "notes": "Nucleotide divergence between lepidopteran snf7 genes is high enough to design narrow-spectrum dsRNA."
+      },
+      "risks": [
+        "Slow kill speed — plantation managers expect visible knockdown within days."
+      ],
+      "next_step": "Confirm the Metisa sequence differs from Elaeidobius kamerunicus snf7 across every 21-nt window."
+    },
+    {
+      "rank": 3,
+      "protein_id": "g01187.t1",
+      "gene_symbol": "CHS-A / CHS1",
+      "annotation": "Chitin synthase A",
+      "family": "Chitin synthase",
+      "subfamily": "CHS-A (epidermal)",
+      "category": "chitin_cuticle",
+      "contamination_status": "clean_insect",
+      "annotation_source": "blast+interpro",
+      "in_top10": true,
+      "flags": [
+        "no_vertebrate_orthologue"
+      ],
+      "notes": "",
+      "owner": "ghaya",
+      "split": 1,
+      "length_aa": 1573,
+      "target_class": "lethal_rnai_target",
+      "mechanism": "Polymerises the chitin of new cuticle at each moult. Knockdown produces lethal moulting failure with the larva trapped mid-ecdysis.",
+      "why_selected": "Insect and fungal enzyme with no vertebrate counterpart, so the whole pathway is intrinsically selective. Benzoylurea chemistry already attacks it, which means the biology is proven in the field.",
+      "delivery_strategy": "Oral dsRNA, or small-molecule inhibitor building on benzoylureas",
+      "hit_subject_id": "tr|SAMPLE014|CHSA_SPOEX",
+      "hit_organism": "Spodoptera exigua",
+      "hit_identity": 85.7,
+      "hit_coverage": 94.9,
+      "hit_evalue": 0.0,
+      "hit_bitscore": 2571,
+      "domains": [
+        {
+          "source": "Pfam",
+          "id": "PF03142",
+          "name": "Chitin synthase"
+        }
+      ],
+      "literature_support": "RNAi and benzoylurea inhibition both give moulting lethality across Lepidoptera.",
+      "priority_score": 93.5,
+      "score_breakdown": {
+        "essentiality": 19.5,
+        "specificity": 19.0,
+        "rnai_evidence": 18.0,
+        "annotation_confidence": 19.0,
+        "druggability": 18.0
+      },
+      "confidence": "high",
+      "specificity": {
+        "off_target_status": "pending",
+        "off_target_method": "21-nt sliding window vs beneficial-insect transcriptomes",
+        "beneficial_conflicts": [],
+        "vertebrate_orthologue": false,
+        "notes": "No vertebrate orthologue — the strongest structural selectivity argument in the set."
+      },
+      "risks": [
+        "Also present in beneficial insects, so dsRNA windows still need screening."
+      ],
+      "next_step": "Check whether the Metisa gene has the CHS-A specific alternative exon used for isoform-selective targeting."
+    },
+    {
+      "rank": 4,
+      "protein_id": "g02114.t1",
+      "gene_symbol": "para / VGSC",
+      "annotation": "Voltage-gated sodium channel, para orthologue",
+      "family": "Voltage-gated ion channel",
+      "subfamily": "Nav (para)",
+      "category": "digestion_insecticide_target",
+      "contamination_status": "clean_insect",
+      "annotation_source": "blast+interpro",
+      "in_top10": true,
+      "flags": [
+        "found_in_split_3",
+        "highest_identity_hit"
+      ],
+      "notes": "Best-identity hit in split 3 (~94% to Spodoptera, Papilio, Mythimna). Evidence the proteome is clean and on-target.",
+      "owner": "chiamin",
+      "split": 3,
+      "length_aa": 1994,
+      "target_class": "insecticide_binding_site",
+      "mechanism": "Propagates the nerve action potential and is the binding site of pyrethroids and DDT. Modulation causes rapid paralysis.",
+      "why_selected": "The only candidate that delivers immediate knockdown speed, and our own split-3 BLAST recovered it at ~94% identity to three other moths — the cleanest annotation in the whole dataset.",
+      "delivery_strategy": "Small-molecule modulator; also the reference point for monitoring kdr resistance mutations",
+      "hit_subject_id": "tr|SAMPLE008|VGSC_SPOFR",
+      "hit_organism": "Spodoptera frugiperda",
+      "hit_identity": 94.2,
+      "hit_coverage": 97.5,
+      "hit_evalue": 0.0,
+      "hit_bitscore": 3411,
+      "domains": [
+        {
+          "source": "Pfam",
+          "id": "PF00520",
+          "name": "Ion transport protein"
+        },
+        {
+          "source": "Pfam",
+          "id": "PF11933",
+          "name": "Sodium ion transport-associated"
+        }
+      ],
+      "literature_support": "Established target site of the pyrethroid class; kdr/super-kdr mutations are well characterised.",
+      "priority_score": 92.6,
+      "score_breakdown": {
+        "essentiality": 20.0,
+        "specificity": 15.6,
+        "rnai_evidence": 17.0,
+        "annotation_confidence": 20.0,
+        "druggability": 20.0
+      },
+      "confidence": "high",
+      "specificity": {
+        "off_target_status": "pending",
+        "off_target_method": "Sequence alignment of the pyrethroid binding pocket vs Apis mellifera and Elaeidobius kamerunicus",
+        "beneficial_conflicts": [
+          "Highly conserved in bees — the weakest selectivity score in the Top-10"
+        ],
+        "vertebrate_orthologue": true,
+        "notes": "Selectivity would have to come from pocket-level differences, not overall divergence."
+      },
+      "risks": [
+        "Bee toxicity risk is real.",
+        "Field resistance to this site already exists in other pests."
+      ],
+      "next_step": "Scan our sequence for known kdr positions to see whether resistance alleles are already present in Malaysian populations."
+    },
+    {
+      "rank": 5,
+      "protein_id": "g21044.t1",
+      "gene_symbol": "EcR",
+      "annotation": "Ecdysone receptor",
+      "family": "Nuclear receptor",
+      "subfamily": "NR1H1 (EcR)",
+      "category": "hormone_immune",
+      "contamination_status": "clean_insect",
+      "annotation_source": "blast+interpro",
+      "in_top10": true,
+      "flags": [
+        "existing_chemistry_available"
+      ],
+      "notes": "",
+      "owner": "lyana",
+      "split": 4,
+      "length_aa": 561,
+      "target_class": "development_disruptor",
+      "mechanism": "Heterodimerises with USP to switch on the moulting gene cascade. Both agonists and knockdown block metamorphosis.",
+      "why_selected": "A single control point for the entire moulting programme, and diacylhydrazine chemistry shows lepidopteran-selective agonism is achievable.",
+      "delivery_strategy": "Small-molecule agonist, or oral dsRNA",
+      "hit_subject_id": "sp|SAMPLE019|ECR_BOMMO",
+      "hit_organism": "Bombyx mori",
+      "hit_identity": 81.9,
+      "hit_coverage": 93.6,
+      "hit_evalue": 0.0,
+      "hit_bitscore": 968,
+      "domains": [
+        {
+          "source": "Pfam",
+          "id": "PF00105",
+          "name": "Zinc finger, C4 type"
+        },
+        {
+          "source": "Pfam",
+          "id": "PF00104",
+          "name": "Nuclear hormone receptor ligand-binding domain"
+        }
+      ],
+      "literature_support": "Diacylhydrazines are selectively active on lepidopteran EcR; RNAi blocks moulting.",
+      "priority_score": 91.0,
+      "score_breakdown": {
+        "essentiality": 19.0,
+        "specificity": 16.0,
+        "rnai_evidence": 18.0,
+        "annotation_confidence": 19.0,
+        "druggability": 19.0
+      },
+      "confidence": "high",
+      "specificity": {
+        "off_target_status": "pending",
+        "off_target_method": "Ligand-binding domain alignment across Hymenoptera and Coleoptera",
+        "beneficial_conflicts": [
+          "Present in parasitoid wasps — timing of application matters"
+        ],
+        "vertebrate_orthologue": false,
+        "notes": "No vertebrate orthologue. Order-level selectivity is documented for existing agonists."
+      },
+      "risks": [
+        "Parasitoid wasps share the pathway, so spray timing must avoid their larval stages."
+      ],
+      "next_step": "Model the ligand-binding pocket against known diacylhydrazine-sensitive residues."
+    },
+    {
+      "rank": 6,
+      "protein_id": "g01193.t1",
+      "gene_symbol": "CDA1",
+      "annotation": "Chitin deacetylase 1",
+      "family": "Carbohydrate esterase family 4",
+      "subfamily": "Chitin deacetylase",
+      "category": "chitin_cuticle",
+      "contamination_status": "clean_insect",
+      "annotation_source": "blast+interpro",
+      "in_top10": true,
+      "flags": [
+        "no_vertebrate_orthologue"
+      ],
+      "notes": "",
+      "owner": "ghaya",
+      "split": 1,
+      "length_aa": 471,
+      "target_class": "lethal_rnai_target",
+      "mechanism": "Converts chitin to chitosan in the new cuticle laminae. Knockdown gives fragile, disorganised cuticle and death at ecdysis.",
+      "why_selected": "Same selectivity logic as chitin synthase but a smaller, better-behaved gene for dsRNA design, and it sits downstream so it is less likely to be compensated.",
+      "delivery_strategy": "Oral dsRNA",
+      "hit_subject_id": "tr|SAMPLE015|CDA1_BOMMO",
+      "hit_organism": "Bombyx mori",
+      "hit_identity": 76.2,
+      "hit_coverage": 91.0,
+      "hit_evalue": 2e-201,
+      "hit_bitscore": 921,
+      "domains": [
+        {
+          "source": "Pfam",
+          "id": "PF01522",
+          "name": "Polysaccharide deacetylase"
+        },
+        {
+          "source": "Pfam",
+          "id": "PF01607",
+          "name": "Chitin-binding domain type 2"
+        }
+      ],
+      "literature_support": "CDA1/CDA2 knockdown causes moulting defects in several lepidopterans.",
+      "priority_score": 87.7,
+      "score_breakdown": {
+        "essentiality": 18.0,
+        "specificity": 18.7,
+        "rnai_evidence": 16.0,
+        "annotation_confidence": 18.0,
+        "druggability": 17.0
+      },
+      "confidence": "high",
+      "specificity": {
+        "off_target_status": "pending",
+        "off_target_method": "21-nt sliding window vs beneficial-insect transcriptomes",
+        "beneficial_conflicts": [],
+        "vertebrate_orthologue": false,
+        "notes": "No vertebrate orthologue; moderate identity to other moths suggests usable nucleotide divergence."
+      },
+      "risks": [
+        "Family has partially redundant members (CDA2 onward)."
+      ],
+      "next_step": "Count how many CDA paralogues exist in the full 26,490 proteome before committing."
+    },
+    {
+      "rank": 7,
+      "protein_id": "g06644.t1",
+      "gene_symbol": "RyR",
+      "annotation": "Ryanodine receptor",
+      "family": "Ryanodine receptor",
+      "subfamily": "Insect RyR",
+      "category": "digestion_insecticide_target",
+      "contamination_status": "clean_insect",
+      "annotation_source": "blast+interpro",
+      "in_top10": true,
+      "flags": [
+        "diamide_target"
+      ],
+      "notes": "",
+      "owner": "syaf",
+      "split": 2,
+      "length_aa": 5210,
+      "target_class": "insecticide_binding_site",
+      "mechanism": "Calcium release channel of muscle. Diamide binding causes uncontrolled calcium leak, then paralysis and feeding arrest.",
+      "why_selected": "Insect RyR is different enough from the vertebrate channel to give genuine mammalian safety, and diamides already prove the site is druggable.",
+      "delivery_strategy": "Small-molecule diamide analogue",
+      "hit_subject_id": "tr|SAMPLE013|RYR_PLUXY",
+      "hit_organism": "Plutella xylostella",
+      "hit_identity": 88.1,
+      "hit_coverage": 92.3,
+      "hit_evalue": 0.0,
+      "hit_bitscore": 8904,
+      "domains": [
+        {
+          "source": "Pfam",
+          "id": "PF02026",
+          "name": "RyR domain"
+        },
+        {
+          "source": "Pfam",
+          "id": "PF08454",
+          "name": "RIH-associated domain"
+        }
+      ],
+      "literature_support": "Target of chlorantraniliprole and flubendiamide; G4946E resistance mutation characterised in diamondback moth.",
+      "priority_score": 86.4,
+      "score_breakdown": {
+        "essentiality": 17.4,
+        "specificity": 17.0,
+        "rnai_evidence": 14.0,
+        "annotation_confidence": 19.0,
+        "druggability": 19.0
+      },
+      "confidence": "high",
+      "specificity": {
+        "off_target_status": "pending",
+        "off_target_method": "Transmembrane domain alignment vs vertebrate RyR1-3 and Apis mellifera",
+        "beneficial_conflicts": [
+          "Some hymenopteran sensitivity reported for diamides"
+        ],
+        "vertebrate_orthologue": true,
+        "notes": "Selectivity is pocket-level, and it is already commercially demonstrated."
+      },
+      "risks": [
+        "Diamide resistance is emerging regionally.",
+        "5,210 aa gene — hard to assemble and validate confidently."
+      ],
+      "next_step": "Check our sequence at the known diamide-resistance positions."
+    },
+    {
+      "rank": 8,
+      "protein_id": "g04910.t1",
+      "gene_symbol": "APN1",
+      "annotation": "Aminopeptidase N 1",
+      "family": "M1 metallopeptidase",
+      "subfamily": "Aminopeptidase N",
+      "category": "digestion_insecticide_target",
+      "contamination_status": "clean_insect",
+      "annotation_source": "blast+interpro",
+      "in_top10": true,
+      "flags": [
+        "bt_receptor"
+      ],
+      "notes": "",
+      "owner": "syaf",
+      "split": 2,
+      "length_aa": 1002,
+      "target_class": "insecticide_binding_site",
+      "mechanism": "Midgut brush-border receptor that Bt Cry toxins bind before pore formation. Loss of APN1 is a known route to Bt resistance.",
+      "why_selected": "Directly addresses the problem in the brief — Bt is already failing on this pest. Characterising APN1 explains why, and points at a way to restore Bt efficacy.",
+      "delivery_strategy": "Diagnostic marker plus Cry protein re-engineering, not a kill target itself",
+      "hit_subject_id": "tr|SAMPLE011|APN1_PLUXY",
+      "hit_organism": "Plutella xylostella",
+      "hit_identity": 64.5,
+      "hit_coverage": 90.7,
+      "hit_evalue": 0.0,
+      "hit_bitscore": 1176,
+      "domains": [
+        {
+          "source": "Pfam",
+          "id": "PF01433",
+          "name": "Peptidase family M1"
+        },
+        {
+          "source": "Pfam",
+          "id": "PF11838",
+          "name": "ERAP1-like C-terminal domain"
+        }
+      ],
+      "literature_support": "APN1 downregulation and mutation both linked to Cry1Ac resistance in Lepidoptera.",
+      "priority_score": 82.9,
+      "score_breakdown": {
+        "essentiality": 17.0,
+        "specificity": 15.9,
+        "rnai_evidence": 15.0,
+        "annotation_confidence": 18.0,
+        "druggability": 17.0
+      },
+      "confidence": "high",
+      "specificity": {
+        "off_target_status": "pending",
+        "off_target_method": "21-nt sliding window vs beneficial-insect transcriptomes",
+        "beneficial_conflicts": [],
+        "vertebrate_orthologue": true,
+        "notes": "Large paralogue family in Lepidoptera — the specific member matters."
+      },
+      "risks": [
+        "Knocking it down could increase Bt resistance rather than reduce it — mechanism must be stated carefully in the report."
+      ],
+      "next_step": "Resolve which APN paralogue this is by building the APN family tree (MAFFT + IQ-TREE)."
+    },
+    {
+      "rank": 9,
+      "protein_id": "g10421.t1",
+      "gene_symbol": "CYP6AE",
+      "annotation": "Cytochrome P450 6AE subfamily",
+      "family": "Cytochrome P450",
+      "subfamily": "CYP6AE",
+      "category": "detoxification",
+      "contamination_status": "clean_insect",
+      "annotation_source": "blast+interpro",
+      "in_top10": true,
+      "flags": [],
+      "notes": "",
+      "owner": "chiamin",
+      "split": 3,
+      "length_aa": 512,
+      "target_class": "resistance_breaker",
+      "mechanism": "Oxidises pyrethroids and neonicotinoids. Silencing does not kill, it restores susceptibility to insecticides the pest currently survives.",
+      "why_selected": "The clearest resistance-breaker in the set. Paired with an existing insecticide it converts a failing product back into a working one, which is cheaper than developing new chemistry.",
+      "delivery_strategy": "dsRNA co-formulated as a synergist with existing insecticide",
+      "hit_subject_id": "tr|SAMPLE001|CYP6AE_SPOLI",
+      "hit_organism": "Spodoptera litura",
+      "hit_identity": 78.4,
+      "hit_coverage": 96.1,
+      "hit_evalue": 1e-142,
+      "hit_bitscore": 712,
+      "domains": [
+        {
+          "source": "Pfam",
+          "id": "PF00067",
+          "name": "Cytochrome P450"
+        }
+      ],
+      "literature_support": "CYP6AE members repeatedly implicated in metabolic resistance in noctuid pests.",
+      "priority_score": 81.5,
+      "score_breakdown": {
+        "essentiality": 14.5,
+        "specificity": 16.0,
+        "rnai_evidence": 17.0,
+        "annotation_confidence": 18.0,
+        "druggability": 16.0
+      },
+      "confidence": "high",
+      "specificity": {
+        "off_target_status": "pending",
+        "off_target_method": "21-nt sliding window vs beneficial-insect transcriptomes; CYP6 family is fast-evolving so divergence is expected",
+        "beneficial_conflicts": [],
+        "vertebrate_orthologue": false,
+        "notes": "Insect-specific subfamily — the fast evolution that makes P450s hard to name also makes them easy to target narrowly."
+      },
+      "risks": [
+        "Not lethal on its own — must be sold as a synergist.",
+        "Detox P450s are redundant, so several members may need silencing together."
+      ],
+      "next_step": "Cluster all split-3 P450s into subfamilies to see how many CYP6AE paralogues we actually have."
+    },
+    {
+      "rank": 10,
+      "protein_id": "g14003.t1",
+      "gene_symbol": "ABCC2",
+      "annotation": "ATP-binding cassette transporter subfamily C member 2",
+      "family": "ABC transporter",
+      "subfamily": "ABCC",
+      "category": "detoxification",
+      "contamination_status": "clean_insect",
+      "annotation_source": "blast+interpro",
+      "in_top10": true,
+      "flags": [
+        "bt_resistance_linked"
+      ],
+      "notes": "",
+      "owner": "chiamin",
+      "split": 3,
+      "length_aa": 1289,
+      "target_class": "resistance_breaker",
+      "mechanism": "Effluxes xenobiotics and also acts as a Cry toxin receptor. Mutations here are one of the best-documented causes of Bt resistance.",
+      "why_selected": "Completes the resistance story alongside CYP6AE and APN1: efflux, metabolism, and receptor loss are the three ways this pest survives what we spray.",
+      "delivery_strategy": "Resistance monitoring marker; dsRNA synergist",
+      "hit_subject_id": "tr|SAMPLE005|ABCC2_PLUXY",
+      "hit_organism": "Plutella xylostella",
+      "hit_identity": 62.7,
+      "hit_coverage": 84.0,
+      "hit_evalue": 0.0,
+      "hit_bitscore": 1504,
+      "domains": [
+        {
+          "source": "Pfam",
+          "id": "PF00664",
+          "name": "ABC transporter transmembrane region"
+        },
+        {
+          "source": "Pfam",
+          "id": "PF00005",
+          "name": "ABC transporter, ATP-binding"
+        }
+      ],
+      "literature_support": "ABCC2 loss-of-function confers Cry1Ac resistance in multiple lepidopteran species.",
+      "priority_score": 79.8,
+      "score_breakdown": {
+        "essentiality": 14.8,
+        "specificity": 16.0,
+        "rnai_evidence": 16.0,
+        "annotation_confidence": 18.0,
+        "druggability": 15.0
+      },
+      "confidence": "high",
+      "specificity": {
+        "off_target_status": "pending",
+        "off_target_method": "21-nt sliding window vs beneficial-insect transcriptomes",
+        "beneficial_conflicts": [],
+        "vertebrate_orthologue": true,
+        "notes": "Coverage is only 84% — worth confirming the gene model is complete before relying on it."
+      },
+      "risks": [
+        "Partial coverage suggests a possibly truncated gene prediction.",
+        "Same caution as APN1: silencing it may mimic resistance."
+      ],
+      "next_step": "Re-check the gene model boundaries against the nucleotide FASTA."
+    }
+  ]
+}
