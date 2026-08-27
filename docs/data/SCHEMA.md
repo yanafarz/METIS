@@ -79,7 +79,7 @@ category              detoxification | chitin_cuticle | digestion_insecticide_ta
 
 contamination_status  clean_insect | non_arthropod_eukaryote | ambiguous |
                       contaminant_bacterial | contaminant_fungal |
-                      no_hit | below_threshold
+                      no_hit | no_qualifying_hit
 
 target_class          lethal_rnai_target | insecticide_binding_site |
                       resistance_breaker | development_disruptor | none

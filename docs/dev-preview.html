@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dev preview — Metisa target mining data layer</title>
+
+<!--
+  SCAFFOLDING. NOT THE REAL SITE. DELETE BEFORE SUBMISSION.
+
+  This file exists for one reason: to let me test script.js before
+  docs/index.html exists. It contains every element ID listed in
+  docs/CONTRACT.md and nothing else.
+
+  It is deliberately plain. The design is Ghaya's job, not mine — do not
+  treat any of the styling below as a proposal. When index.html lands,
+  this file gets deleted.
+
+  Run it:
+      python -m http.server 8000
+  then open http://localhost:8000/docs/dev-preview.html
+  (fetch() does not work on file:// so double-clicking will fail)
+-->
+
+<style>
+  /* Bare minimum to make the output legible while testing. Not a design. */
+  :root {
+    --chart-1: #22d3ee; --chart-2: #a78bfa; --chart-3: #2dd4bf;
+    --chart-4: #60a5fa; --chart-5: #f472b6; --chart-6: #fbbf24;
+    --chart-7: #34d399; --chart-text: #334155; --chart-muted: #94a3b8;
+  }
+  body { font: 15px/1.5 system-ui, sans-serif; margin: 0; padding: 24px; max-width: 1100px; }
+  h1, h2 { font-weight: 600; }
+  h1 { font-size: 20px; }
+  h2 { font-size: 16px; margin-top: 40px; border-top: 1px solid #e2e8f0; padding-top: 20px; }
+
+  /* script.js requires this rule to exist — see CONTRACT.md */
+  .is-hidden { display: none; }
+
+  #sample-data-banner { background: #fef3c7; border: 1px solid #fbbf24; padding: 10px 14px; border-radius: 6px; }
+  #load-error { background: #fee2e2; border: 1px solid #ef4444; padding: 10px 14px; border-radius: 6px; }
+
+  #headline-stats { display: flex; flex-wrap: wrap; gap: 20px; }
+  .stat { border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 14px; }
+  .stat-value { display: block; font-size: 20px; font-weight: 700; }
+  .stat-label { font-size: 12px; color: #64748b; }
+
+  #candidate-cards { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+  .candidate-card { border: 1px solid #e2e8f0; border-radius: 6px; padding: 14px; }
+  .candidate-card h3 { margin: 6px 0; font-size: 15px; }
+  .candidate-rank { font-size: 12px; color: #64748b; }
+
+  .badge { display: inline-block; font-size: 11px; padding: 2px 7px; border-radius: 10px;
+           background: #e2e8f0; margin-right: 4px; }
+
+  .domain-list, .risk-list, .conflict-list { margin: 6px 0; padding-left: 18px; font-size: 13px; }
+  .domain-chip { list-style: none; display: inline-block; font-size: 11px;
+                 border: 1px solid #cbd5e1; border-radius: 4px; padding: 1px 6px; margin: 2px 2px 0 0; }
+  .domain-list { padding-left: 0; }
+
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+  input, select, button { font: inherit; padding: 5px 8px; }
+
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { border-bottom: 1px solid #e2e8f0; padding: 6px 8px; text-align: left; }
+  th[data-sort] { cursor: pointer; user-select: none; white-space: nowrap; }
+  th.is-sorted { color: #0e7490; }
+  td.is-numeric { text-align: right; font-variant-numeric: tabular-nums; }
+  tbody tr { cursor: pointer; }
+  tbody tr:hover, tbody tr:focus { background: #f1f5f9; outline: none; }
+  tr.is-top10 td:first-child { font-weight: 700; }
+
+  dialog { max-width: 640px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 20px; }
+  dialog::backdrop { background: rgba(15, 23, 42, 0.5); }
+  .detail-list { display: grid; grid-template-columns: 160px 1fr; gap: 4px 12px; font-size: 13px; margin: 0; }
+  .detail-list dt { color: #64748b; }
+  .detail-list dd { margin: 0; }
+  .detail-heading { margin: 16px 0 6px; font-size: 13px; text-transform: uppercase;
+                    letter-spacing: 0.04em; color: #64748b; }
+  .detail-top10 { font-weight: 600; color: #0e7490; margin-top: 0; }
+
+  .score-row { display: grid; grid-template-columns: 160px 1fr 60px; gap: 10px;
+               align-items: center; font-size: 12px; margin-bottom: 4px; }
+  .score-track { background: #e2e8f0; border-radius: 4px; height: 8px; display: block; }
+  .score-fill { background: var(--chart-1); border-radius: 4px; height: 8px; display: block; }
+  .score-number { text-align: right; color: #64748b; }
+
+  .charts { display: grid; gap: 28px; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
+  .chart { min-height: 260px; }           /* charts need a real height or they collapse */
+  .chart h3 { font-size: 13px; margin: 0 0 6px; color: #64748b; }
+  .chart-note { font-size: 12px; color: #64748b; margin: 6px 0 0; }
+  .chart-note.is-placeholder { color: #b45309; }
+
+  :focus-visible { outline: 2px solid #0e7490; outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+
+<p style="background:#fee2e2;border:1px solid #ef4444;padding:8px 12px;border-radius:6px;font-size:13px">
+  <strong>Dev scaffolding.</strong> Test harness for <code>script.js</code>, not the real site.
+  Ghaya's <code>index.html</code> replaces this. Delete before submission.
+</p>
+
+<h1>Metisa plana — target mining data layer</h1>
+
+<div id="sample-data-banner" hidden></div>
+<div id="load-error" class="is-hidden"><strong>Load failed.</strong> <span id="load-error-message"></span></div>
+<div id="loading">Loading data…</div>
+
+<h2>Headline stats</h2>
+<div id="headline-stats"></div>
+
+<h2>Top-10 candidates</h2>
+<div id="candidate-cards"></div>
+
+<h2>Protein explorer</h2>
+<div class="controls">
+  <input type="search" id="protein-search" placeholder="Search ID, annotation, family…" size="32">
+  <select id="filter-category"></select>
+  <select id="filter-target-class"></select>
+  <select id="filter-contamination"></select>
+  <select id="filter-confidence"></select>
+  <button type="button" id="filter-reset">Clear filters</button>
+</div>
+<p><span id="result-count"></span></p>
+<div id="empty-state" class="is-hidden">No proteins match these filters. Clear them to start again.</div>
+<table id="candidate-table">
+  <tbody id="candidate-table-body"></tbody>
+</table>
+
+<h2>QC charts</h2>
+<div class="charts">
+  <div class="chart"><h3>Taxonomic screening</h3><div id="chart-contamination"></div></div>
+  <div class="chart"><h3>Sequence quality</h3><div id="chart-sequence-quality"></div></div>
+  <div class="chart"><h3>Hit rate by split</h3><div id="chart-hit-rate"></div></div>
+  <div class="chart"><h3>Identity distribution</h3><div id="chart-identity"></div></div>
+  <div class="chart"><h3>Top hit organisms</h3><div id="chart-organisms"></div></div>
+  <div class="chart"><h3>Hit rows vs threshold</h3><div id="chart-thresholds"></div></div>
+  <div class="chart"><h3>Top-10 by target class</h3><div id="chart-target-class"></div></div>
+</div>
+
+<dialog id="target-modal">
+  <h2 id="target-modal-title"></h2>
+  <div id="target-modal-body"></div>
+  <p><button type="button" id="target-modal-close">Close</button></p>
+</dialog>
+
+<script src="script.js"></script>
+</body>
+</html>
