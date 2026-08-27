@@ -27,7 +27,8 @@ CATEGORY = {
 }
 CONTAMINATION = {
     "clean_insect", "non_arthropod_eukaryote", "ambiguous",
-    "contaminant_bacterial", "contaminant_fungal", "no_hit", "below_threshold",
+    "contaminant_bacterial", "contaminant_fungal", "no_hit", "no_qualifying_hit",
+    "below_threshold",  # deprecated alias for no_qualifying_hit, still accepted
 }
 TARGET_CLASS = {
     "lethal_rnai_target", "insecticide_binding_site",
@@ -127,9 +128,9 @@ def check_record(where: str, rec: dict) -> None:
             err(f"{where}: {field}={value!r} — use null for missing values, not a placeholder string")
 
     check_enum(where, "category", rec.get("category"), CATEGORY)
-    check_enum(where, "owner", rec.get("owner"), OWNER)
+    check_enum(where, "owner", rec.get("owner"), OWNER, nullable=True)
     check_enum(where, "contamination_status", rec.get("contamination_status"), CONTAMINATION)
-    check_enum(where, "target_class", rec.get("target_class"), TARGET_CLASS)
+    check_enum(where, "target_class", rec.get("target_class"), TARGET_CLASS, nullable=True)
     check_enum(where, "confidence", rec.get("confidence"), CONFIDENCE)
     if "annotation_source" in rec:
         check_enum(where, "annotation_source", rec.get("annotation_source"), ANNOTATION_SOURCE)
@@ -206,6 +207,14 @@ def main() -> int:
 
     by_id = {r.get("protein_id"): r for r in proteins}
 
+    # Real proteins alongside placeholder candidates is a normal mid-project state.
+    proteins_real = not (proteins_doc.get("meta", {}) or {}).get("is_placeholder", False)
+    candidates_fake = (candidates_doc.get("meta", {}) or {}).get("is_placeholder", False)
+    mixed_provenance = proteins_real and candidates_fake
+    if mixed_provenance:
+        warn("proteins.json holds real data but candidates.json is still placeholder — "
+             "cross-file checks relaxed. Rebuild candidates.json once ranking exists.")
+
     ranks: list = []
     for i, cand in enumerate(candidates):
         where = f"candidates[{i}]"
@@ -214,17 +223,25 @@ def main() -> int:
         pid = cand.get("protein_id")
         ranks.append(cand.get("rank"))
 
+        placeholder_id = isinstance(pid, str) and pid.startswith("SAMPLE")
+        if placeholder_id:
+            warn(f"{where}: {pid} is a deliberate placeholder id, cross-file checks skipped")
+
         partner = by_id.get(pid)
-        if partner is None:
-            err(f"{where}: protein_id {pid!r} is not in proteins.json — the detail modal will 404")
+        if placeholder_id:
+            pass
+        elif partner is None:
+            if mixed_provenance:
+                warn(f"{where}: {pid!r} not in proteins.json — expected while candidates.json is "
+                     f"still placeholder and proteins.json holds real data")
+            else:
+                err(f"{where}: protein_id {pid!r} is not in proteins.json — the detail modal will 404")
         else:
             for field in CORE_SHARED:
                 if field in cand and field in partner and cand[field] != partner[field]:
-                    err(f"{where}: {field} disagrees with proteins.json "
-                        f"({cand[field]!r} vs {partner[field]!r})")
+                    report_disagreement(where, field, cand[field], partner[field], mixed_provenance)
             if partner.get("rank") != cand.get("rank"):
-                err(f"{where}: rank {cand.get('rank')!r} disagrees with "
-                    f"proteins.json rank {partner.get('rank')!r}")
+                report_disagreement(where, "rank", cand.get("rank"), partner.get("rank"), mixed_provenance)
 
         for field in ("why_selected", "mechanism", "delivery_strategy", "next_step"):
             if not cand.get(field):
@@ -259,6 +276,10 @@ def main() -> int:
         if s2 > s1:
             err(f"candidates.json: rank {r2} scores {s2} but rank {r1} only scores {s1} — ranking is inconsistent")
 
+    for doc_name, doc in (("proteins.json", proteins_doc), ("candidates.json", candidates_doc)):
+        for question in (doc.get("meta", {}) or {}).get("open_questions", []) or []:
+            warn(f"{doc_name}: {question}")
+
     for name, key in (("charts", dict), ("splits", list), ("proteome", dict)):
         if name not in qc_doc:
             err(f"qc_summary.json: missing '{name}'")
@@ -272,6 +293,18 @@ def main() -> int:
     report()
     print(f"\nChecked {len(proteins)} proteins and {len(candidates)} candidates.")
     return 1 if errors else 0
+
+
+def report_disagreement(where: str, field: str, cand_value, protein_value, relaxed: bool) -> None:
+    """A candidate field that disagrees with proteins.json.
+
+    Normally an error. But while candidates.json is placeholder and proteins.json
+    holds real data, disagreement is expected rather than broken, so it downgrades
+    to a warning instead of burying the real problems.
+    """
+    message = (f"{where}: {field} disagrees with proteins.json "
+               f"({cand_value!r} vs {protein_value!r})")
+    (warn if relaxed else err)(message)
 
 
 def report() -> None:

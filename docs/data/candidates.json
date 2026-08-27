@@ -1,6 +1,6 @@
 {
   "meta": {
-    "schema_version": "1.0.0",
+    "schema_version": "1.2.0",
     "dataset": "candidates",
     "generated": "2026-08-28",
     "is_placeholder": true,
@@ -41,12 +41,13 @@
         }
       ]
     },
-    "notes": "Every candidate is also present in proteins.json with the same protein_id. The detail modal can render either record with one function."
+    "notes": "Every candidate is also present in proteins.json with the same protein_id. The detail modal can render either record with one function.",
+    "placeholder_id_note": "protein_id values are SAMPLE-01..SAMPLE-10 on purpose. Earlier versions used invented gN.tM ids, three of which turned out to collide with real proteins in the 16,783-row dataset, so clicking a real row could surface fake evidence. Anything starting with SAMPLE- cannot collide."
   },
   "candidates": [
     {
       "rank": 1,
-      "protein_id": "g04587.t1",
+      "protein_id": "SAMPLE-01",
       "gene_symbol": "Vha68 / V-ATPase-A",
       "annotation": "V-type proton ATPase catalytic subunit A",
       "family": "V-type ATPase",
@@ -58,7 +59,7 @@
       "flags": [
         "rnai_validated_in_related_species"
       ],
-      "notes": "",
+      "notes": "Placeholder record; real id was invented as g04587.t1.",
       "owner": "syaf",
       "split": 2,
       "length_aa": 616,
@@ -108,7 +109,7 @@
     },
     {
       "rank": 2,
-      "protein_id": "g23001.t1",
+      "protein_id": "SAMPLE-02",
       "gene_symbol": "snf7 / vps32",
       "annotation": "Vacuolar protein sorting-associated protein SNF7",
       "family": "SNF7/ESCRT-III",
@@ -120,7 +121,7 @@
       "flags": [
         "rnai_validated_commercially"
       ],
-      "notes": "",
+      "notes": "Placeholder record; real id was invented as g23001.t1.",
       "owner": "lyana",
       "split": 4,
       "length_aa": 231,
@@ -165,7 +166,7 @@
     },
     {
       "rank": 3,
-      "protein_id": "g01187.t1",
+      "protein_id": "SAMPLE-03",
       "gene_symbol": "CHS-A / CHS1",
       "annotation": "Chitin synthase A",
       "family": "Chitin synthase",
@@ -177,7 +178,7 @@
       "flags": [
         "no_vertebrate_orthologue"
       ],
-      "notes": "",
+      "notes": "Placeholder record; real id was invented as g01187.t1.",
       "owner": "ghaya",
       "split": 1,
       "length_aa": 1573,
@@ -222,7 +223,7 @@
     },
     {
       "rank": 4,
-      "protein_id": "g02114.t1",
+      "protein_id": "SAMPLE-04",
       "gene_symbol": "para / VGSC",
       "annotation": "Voltage-gated sodium channel, para orthologue",
       "family": "Voltage-gated ion channel",
@@ -235,7 +236,7 @@
         "found_in_split_3",
         "highest_identity_hit"
       ],
-      "notes": "Best-identity hit in split 3 (~94% to Spodoptera, Papilio, Mythimna). Evidence the proteome is clean and on-target.",
+      "notes": "Best-identity hit in split 3 (~94% to Spodoptera, Papilio, Mythimna). Evidence the proteome is clean and on-target. Placeholder record; real id was invented as g02114.t1.",
       "owner": "chiamin",
       "split": 3,
       "length_aa": 1994,
@@ -288,7 +289,7 @@
     },
     {
       "rank": 5,
-      "protein_id": "g21044.t1",
+      "protein_id": "SAMPLE-05",
       "gene_symbol": "EcR",
       "annotation": "Ecdysone receptor",
       "family": "Nuclear receptor",
@@ -300,7 +301,7 @@
       "flags": [
         "existing_chemistry_available"
       ],
-      "notes": "",
+      "notes": "Placeholder record; real id was invented as g21044.t1.",
       "owner": "lyana",
       "split": 4,
       "length_aa": 561,
@@ -352,7 +353,7 @@
     },
     {
       "rank": 6,
-      "protein_id": "g01193.t1",
+      "protein_id": "SAMPLE-06",
       "gene_symbol": "CDA1",
       "annotation": "Chitin deacetylase 1",
       "family": "Carbohydrate esterase family 4",
@@ -364,7 +365,7 @@
       "flags": [
         "no_vertebrate_orthologue"
       ],
-      "notes": "",
+      "notes": "Placeholder record; real id was invented as g01193.t1.",
       "owner": "ghaya",
       "split": 1,
       "length_aa": 471,
@@ -414,7 +415,7 @@
     },
     {
       "rank": 7,
-      "protein_id": "g06644.t1",
+      "protein_id": "SAMPLE-07",
       "gene_symbol": "RyR",
       "annotation": "Ryanodine receptor",
       "family": "Ryanodine receptor",
@@ -426,7 +427,7 @@
       "flags": [
         "diamide_target"
       ],
-      "notes": "",
+      "notes": "Placeholder record; real id was invented as g06644.t1.",
       "owner": "syaf",
       "split": 2,
       "length_aa": 5210,
@@ -479,7 +480,7 @@
     },
     {
       "rank": 8,
-      "protein_id": "g04910.t1",
+      "protein_id": "SAMPLE-08",
       "gene_symbol": "APN1",
       "annotation": "Aminopeptidase N 1",
       "family": "M1 metallopeptidase",
@@ -491,7 +492,7 @@
       "flags": [
         "bt_receptor"
       ],
-      "notes": "",
+      "notes": "Placeholder record; real id was invented as g04910.t1.",
       "owner": "syaf",
       "split": 2,
       "length_aa": 1002,
@@ -541,7 +542,7 @@
     },
     {
       "rank": 9,
-      "protein_id": "g10421.t1",
+      "protein_id": "SAMPLE-09",
       "gene_symbol": "CYP6AE",
       "annotation": "Cytochrome P450 6AE subfamily",
       "family": "Cytochrome P450",
@@ -551,7 +552,7 @@
       "annotation_source": "blast+interpro",
       "in_top10": true,
       "flags": [],
-      "notes": "",
+      "notes": "Placeholder record; real id was invented as g10421.t1.",
       "owner": "chiamin",
       "split": 3,
       "length_aa": 512,
@@ -597,7 +598,7 @@
     },
     {
       "rank": 10,
-      "protein_id": "g14003.t1",
+      "protein_id": "SAMPLE-10",
       "gene_symbol": "ABCC2",
       "annotation": "ATP-binding cassette transporter subfamily C member 2",
       "family": "ABC transporter",
@@ -609,7 +610,7 @@
       "flags": [
         "bt_resistance_linked"
       ],
-      "notes": "",
+      "notes": "Placeholder record; real id was invented as g14003.t1.",
       "owner": "chiamin",
       "split": 3,
       "length_aa": 1289,
