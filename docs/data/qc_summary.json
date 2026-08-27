@@ -1,17 +1,17 @@
 {
   "meta": {
-    "schema_version": "1.0.0",
+    "schema_version": "1.1.0",
     "dataset": "qc_summary",
     "generated": "2026-08-28",
     "is_placeholder": true,
-    "data_status": "MIXED — split 3 numbers are REAL (from my finished runs). Splits 1, 2, 4 are placeholders until teammates report theirs.",
+    "data_status": "MIXED — all split-3 counts are now VERIFIED against the category files in notebooks/chiamin/mp3_screen/. Splits 1, 2 and 4 are still placeholders.",
     "value_status_key": {
       "verified": "Taken directly from a finished run and recorded in my notes.",
       "derived": "Arithmetic from verified numbers. Confirm against mp3_screen/ outputs before the report.",
       "placeholder": "Invented. Must be replaced."
-    }
+    },
+    "verification_note": "Reconciled three ways on 28 Aug 2026: the six category counts sum to 6,488 (= proteins with hits); plus the 134 proteins with no hit gives 6,622 (= split total); and qualifying (56,126) plus failed-threshold (23,965) hit rows sum to 80,091 (= raw BLAST rows). Independently confirmed by the consolidated copies in results/ (mp3_blast_raw.tsv 80,092 lines, mp3_screening.tsv 6,489 lines, mp3_filtered_blast.tsv 56,127 lines — each one header plus data)."
   },
-
   "proteome": {
     "species": "Metisa plana",
     "common_name": "Oil palm bagworm",
@@ -21,7 +21,6 @@
     "id_format": "gN.tM",
     "source_note": "Predicted proteins supplied unannotated by the organisers. Private, under NDA."
   },
-
   "pipeline": {
     "reference_db": {
       "name": "UniProt combined",
@@ -31,18 +30,63 @@
       "volumes": 20
     },
     "steps": [
-      { "step": "00", "name": "Quality check", "tool": "custom Python", "status": "done" },
-      { "step": "01", "name": "Clean sequences", "tool": "custom Python", "status": "done" },
-      { "step": "02", "name": "Homology search", "tool": "BLASTp 2.16.0", "status": "done" },
-      { "step": "03", "name": "Threshold + contamination screen", "tool": "custom Python, NCBI taxonomy", "status": "done" },
-      { "step": "04", "name": "Domain confirmation", "tool": "InterProScan", "status": "in_progress", "owner": "lyana" },
-      { "step": "05", "name": "Merge annotations", "tool": "pandas", "status": "not_started" },
-      { "step": "06", "name": "Family classification", "tool": "MAFFT + phylogeny", "status": "not_started" },
-      { "step": "07", "name": "Score and rank", "tool": "custom scoring", "status": "not_started" },
-      { "step": "08", "name": "RNAi off-target screen", "tool": "21-nt window scan", "status": "not_started" }
+      {
+        "step": "00",
+        "name": "Quality check",
+        "tool": "custom Python",
+        "status": "done"
+      },
+      {
+        "step": "01",
+        "name": "Clean sequences",
+        "tool": "custom Python",
+        "status": "done"
+      },
+      {
+        "step": "02",
+        "name": "Homology search",
+        "tool": "BLASTp 2.16.0",
+        "status": "done"
+      },
+      {
+        "step": "03",
+        "name": "Threshold + contamination screen",
+        "tool": "custom Python, NCBI taxonomy",
+        "status": "done"
+      },
+      {
+        "step": "04",
+        "name": "Domain confirmation",
+        "tool": "InterProScan",
+        "status": "in_progress",
+        "owner": "lyana"
+      },
+      {
+        "step": "05",
+        "name": "Merge annotations",
+        "tool": "pandas",
+        "status": "not_started"
+      },
+      {
+        "step": "06",
+        "name": "Family classification",
+        "tool": "MAFFT + phylogeny",
+        "status": "not_started"
+      },
+      {
+        "step": "07",
+        "name": "Score and rank",
+        "tool": "custom scoring",
+        "status": "not_started"
+      },
+      {
+        "step": "08",
+        "name": "RNAi off-target screen",
+        "tool": "21-nt window scan",
+        "status": "not_started"
+      }
     ]
   },
-
   "splits": [
     {
       "split": 1,
@@ -58,11 +102,15 @@
       "split": 2,
       "owner": "syaf",
       "biology_category": "digestion_insecticide_target",
-      "status": "placeholder",
+      "status": "blast_complete_screening_pushed",
       "total_proteins": 6622,
-      "with_hits": null,
+      "with_hits": 6601,
       "no_hits": null,
-      "clean_insect": null
+      "filtered_hit_rows": 61312,
+      "hit_rate_percent": 99.7,
+      "hits_per_protein": 9.29,
+      "source_file": "results/mp2_screening.tsv",
+      "counts_status": "verified row count; hit_rate is provisional because the exact denominator for this split is assumed to be 6,622"
     },
     {
       "split": 3,
@@ -86,7 +134,9 @@
         "hit_rate_percent": 98.0,
         "runtime_days": 5,
         "runtime_note": "6,622 proteins vs a 78 GB database on an Acer laptop. DIAMOND would have been far faster; BLASTp was kept for consistency with Ghaya's committed results.",
-        "status": "verified (no_hits derived as 6622 - 6488)"
+        "status": "verified",
+        "qualifying_hit_rows": 56126,
+        "failed_threshold_hit_rows": 23965
       },
       "screening": {
         "clean_insect": 4564,
@@ -94,14 +144,28 @@
         "ambiguous": 279,
         "contaminant_bacterial": 8,
         "contaminant_fungal": 1,
-        "below_threshold": 1520,
+        "no_qualifying_hit": 1520,
+        "other_prokaryote": 0,
         "clean_insect_percent_of_hits": 70.3,
-        "status": "clean_insect, ambiguous and contaminant counts verified; non_arthropod_eukaryote and below_threshold derived — CHECK against mp3_screen/ before the report"
+        "status": "verified",
+        "source_files": {
+          "clean_insect": "KEEP_ARTHROPOD.tsv",
+          "non_arthropod_eukaryote": "NON_ARTHROPOD_EUKARYOTE.tsv",
+          "ambiguous": "AMBIGUOUS.tsv",
+          "contaminant_bacterial": "POSSIBLE_BACTERIAL.tsv",
+          "contaminant_fungal": "POSSIBLE_FUNGAL.tsv",
+          "no_qualifying_hit": "NO_QUALIFYING_HIT.tsv"
+        },
+        "definition_note": "no_qualifying_hit (1,520) means the protein DID get BLAST hits but none passed the identity/coverage/e-value thresholds. That is different from no_hit (134), which means BLAST returned nothing at all. Keep these separate in the report."
       },
       "handoff": {
         "file": "mp3_screen/fasta_exports/mp3_for_interpro.fasta",
         "protein_count": 4959,
-        "categories_included": ["clean_insect", "non_arthropod_eukaryote", "ambiguous"],
+        "categories_included": [
+          "clean_insect",
+          "non_arthropod_eukaryote",
+          "ambiguous"
+        ],
         "given_to": "lyana",
         "purpose": "InterProScan domain confirmation",
         "status": "verified"
@@ -111,14 +175,18 @@
       "split": 4,
       "owner": "lyana",
       "biology_category": "hormone_immune",
-      "status": "placeholder",
+      "status": "blast_complete_screening_pushed",
       "total_proteins": 6624,
-      "with_hits": null,
+      "with_hits": 3694,
       "no_hits": null,
-      "clean_insect": null
+      "filtered_hit_rows": 11451,
+      "hit_rate_percent": 55.8,
+      "hits_per_protein": 3.1,
+      "source_file": "results/mp4_screening.tsv",
+      "counts_status": "verified row count; hit_rate is provisional because the exact denominator for this split is assumed to be 6,622",
+      "warning": "OUTLIER. 55.8% hit rate and 3.10 hits per protein, against ~99% and ~9 for splits 2 and 3. Most likely a Swiss-Prot-only search instead of the agreed combined UniProt db. Must be resolved before the merge — do not treat these numbers as comparable to the other splits."
     }
   ],
-
   "charts": {
     "contamination_breakdown": {
       "title": "Taxonomic screening, split 3",
@@ -126,15 +194,44 @@
       "scope": "split_3",
       "unit": "proteins",
       "data": [
-        { "label": "Clean insect", "value": 4564, "key": "clean_insect" },
-        { "label": "Below threshold", "value": 1520, "key": "below_threshold" },
-        { "label": "Ambiguous", "value": 279, "key": "ambiguous" },
-        { "label": "No hit", "value": 134, "key": "no_hit" },
-        { "label": "Other eukaryote", "value": 116, "key": "non_arthropod_eukaryote" },
-        { "label": "Bacterial", "value": 8, "key": "contaminant_bacterial" },
-        { "label": "Fungal", "value": 1, "key": "contaminant_fungal" }
+        {
+          "label": "Clean insect",
+          "value": 4564,
+          "key": "clean_insect"
+        },
+        {
+          "label": "No qualifying hit",
+          "value": 1520,
+          "key": "no_qualifying_hit"
+        },
+        {
+          "label": "Ambiguous",
+          "value": 279,
+          "key": "ambiguous"
+        },
+        {
+          "label": "No hit",
+          "value": 134,
+          "key": "no_hit"
+        },
+        {
+          "label": "Other eukaryote",
+          "value": 116,
+          "key": "non_arthropod_eukaryote"
+        },
+        {
+          "label": "Bacterial",
+          "value": 8,
+          "key": "contaminant_bacterial"
+        },
+        {
+          "label": "Fungal",
+          "value": 1,
+          "key": "contaminant_fungal"
+        }
       ],
-      "caption": "Only 9 of 6,622 proteins are contaminants, so the assembly is clean."
+      "caption": "Only 9 of 6,622 proteins are contaminants, so the assembly is clean.",
+      "status": "verified"
     },
     "sequence_quality": {
       "title": "Sequence quality issues, split 3",
@@ -142,23 +239,49 @@
       "scope": "split_3",
       "unit": "proteins",
       "data": [
-        { "label": "Shorter than 50 aa", "value": 58 },
-        { "label": "Contains X residues", "value": 476 },
-        { "label": "Internal stop codons", "value": 0 }
+        {
+          "label": "Shorter than 50 aa",
+          "value": 58
+        },
+        {
+          "label": "Contains X residues",
+          "value": 476
+        },
+        {
+          "label": "Internal stop codons",
+          "value": 0
+        }
       ],
-      "caption": "No internal stops means the gene predictions are structurally sound."
+      "caption": "No internal stops means the gene predictions are structurally sound.",
+      "status": "verified"
     },
     "hit_rate_by_split": {
       "title": "BLAST hit rate by split",
       "type": "bar",
       "unit": "percent",
       "data": [
-        { "label": "Split 1", "value": null, "status": "placeholder" },
-        { "label": "Split 2", "value": null, "status": "placeholder" },
-        { "label": "Split 3", "value": 98.0, "status": "verified" },
-        { "label": "Split 4", "value": null, "status": "placeholder" }
+        {
+          "label": "Split 1",
+          "value": null,
+          "status": "placeholder"
+        },
+        {
+          "label": "Split 2",
+          "value": 99.7,
+          "status": "provisional"
+        },
+        {
+          "label": "Split 3",
+          "value": 98.0,
+          "status": "verified"
+        },
+        {
+          "label": "Split 4",
+          "value": 55.8,
+          "status": "provisional"
+        }
       ],
-      "caption": "Split 3 complete. Other splits pending."
+      "caption": "Splits 2 and 3 agree closely. Split 4 is far lower and needs explaining before the merge."
     },
     "identity_distribution": {
       "title": "Best-hit identity distribution, split 3",
@@ -166,8 +289,26 @@
       "scope": "split_3",
       "unit": "proteins",
       "status": "placeholder",
-      "bins": ["<30", "30-40", "40-50", "50-60", "60-70", "70-80", "80-90", "90-100"],
-      "data": [412, 688, 1104, 1327, 1281, 887, 553, 236],
+      "bins": [
+        "<30",
+        "30-40",
+        "40-50",
+        "50-60",
+        "60-70",
+        "70-80",
+        "80-90",
+        "90-100"
+      ],
+      "data": [
+        412,
+        688,
+        1104,
+        1327,
+        1281,
+        887,
+        553,
+        236
+      ],
       "caption": "Recompute from mp3_blast_raw.tsv — these bin counts are invented."
     },
     "top_hit_organisms": {
@@ -177,12 +318,30 @@
       "unit": "proteins",
       "status": "placeholder",
       "data": [
-        { "label": "Bombyx mori", "value": 1042 },
-        { "label": "Spodoptera litura", "value": 866 },
-        { "label": "Helicoverpa armigera", "value": 731 },
-        { "label": "Plutella xylostella", "value": 604 },
-        { "label": "Danaus plexippus", "value": 388 },
-        { "label": "Papilio machaon", "value": 271 }
+        {
+          "label": "Bombyx mori",
+          "value": 1042
+        },
+        {
+          "label": "Spodoptera litura",
+          "value": 866
+        },
+        {
+          "label": "Helicoverpa armigera",
+          "value": 731
+        },
+        {
+          "label": "Plutella xylostella",
+          "value": 604
+        },
+        {
+          "label": "Danaus plexippus",
+          "value": 388
+        },
+        {
+          "label": "Papilio machaon",
+          "value": 271
+        }
       ],
       "caption": "All Lepidoptera, as expected for a moth proteome. Recompute from mp3_blast_raw.tsv."
     },
@@ -192,20 +351,122 @@
       "unit": "candidates",
       "status": "placeholder",
       "data": [
-        { "label": "Lethal RNAi target", "value": 3 },
-        { "label": "Insecticide binding site", "value": 3 },
-        { "label": "Resistance breaker", "value": 2 },
-        { "label": "Development disruptor", "value": 2 }
+        {
+          "label": "Lethal RNAi target",
+          "value": 3
+        },
+        {
+          "label": "Insecticide binding site",
+          "value": 3
+        },
+        {
+          "label": "Resistance breaker",
+          "value": 2
+        },
+        {
+          "label": "Development disruptor",
+          "value": 2
+        }
       ],
       "caption": "Derived from candidates.json. Regenerate whenever the Top-10 changes."
+    },
+    "hit_row_thresholds": {
+      "title": "BLAST hit rows passing threshold, split 3",
+      "type": "bar",
+      "scope": "split_3",
+      "unit": "hit rows",
+      "status": "verified",
+      "data": [
+        {
+          "label": "Passed threshold",
+          "value": 56126
+        },
+        {
+          "label": "Failed threshold",
+          "value": 23965
+        }
+      ],
+      "caption": "80,091 raw hit rows screened. 70% passed — the same ratio as the clean-insect share."
+    },
+    "hits_per_protein_by_split": {
+      "title": "Average qualifying hits per protein",
+      "type": "bar",
+      "unit": "hits",
+      "status": "provisional",
+      "data": [
+        {
+          "label": "Split 2",
+          "value": 9.29
+        },
+        {
+          "label": "Split 3",
+          "value": 8.65
+        },
+        {
+          "label": "Split 4",
+          "value": 3.1
+        }
+      ],
+      "caption": "A third of the depth on split 4 points at a smaller reference database, not a biology difference."
     }
   },
-
   "headline_stats": [
-    { "label": "Proteins in the proteome", "value": 26490, "status": "verified" },
-    { "label": "My split", "value": 6622, "status": "verified" },
-    { "label": "BLAST hit rate", "value": "98%", "status": "verified" },
-    { "label": "Contaminants found", "value": 9, "status": "verified" },
-    { "label": "Compute time for one split", "value": "5 days", "status": "verified" }
-  ]
+    {
+      "label": "Proteins in the proteome",
+      "value": 26490,
+      "status": "verified"
+    },
+    {
+      "label": "My split",
+      "value": 6622,
+      "status": "verified"
+    },
+    {
+      "label": "BLAST hit rate",
+      "value": "98%",
+      "status": "verified"
+    },
+    {
+      "label": "Contaminants found",
+      "value": 9,
+      "status": "verified"
+    },
+    {
+      "label": "Compute time for one split",
+      "value": "5 days",
+      "status": "verified"
+    }
+  ],
+  "team_screening_columns": {
+    "note": "All three pushed screening files share an identical 27-column header, so the team is running one script. This is the vocabulary the merged table will inherit.",
+    "columns": [
+      "gene_id",
+      "best_hit_accession",
+      "best_hit_species",
+      "best_hit_taxid",
+      "best_hit_lineage",
+      "best_identity_pct",
+      "best_query_coverage_pct",
+      "best_evalue",
+      "best_bitscore",
+      "qualifying_hits",
+      "total_blast_hits",
+      "arthropod_hits",
+      "bacterial_hits",
+      "fungal_hits",
+      "non_arthropod_eukaryote_hits",
+      "other_prokaryote_hits",
+      "unknown_taxonomy_hits",
+      "known_taxonomy_hits",
+      "arthropod_fraction",
+      "bacterial_fraction",
+      "fungal_fraction",
+      "non_arthropod_eukaryote_fraction",
+      "other_prokaryote_fraction",
+      "classification",
+      "decision",
+      "reason",
+      "best_hit_description"
+    ]
+  }
 }
