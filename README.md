@@ -1,4 +1,4 @@
-# Metisa_plana_target_mining
+# Mp draft
 
 for blast can install from here: https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/
 
