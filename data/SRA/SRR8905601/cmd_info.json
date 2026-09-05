@@ -1,0 +1,11 @@
+{
+    "salmon_version": "1.10.2",
+    "index": "/mnt/c/Metisa_RNA/salmon_index/Metisa_genes",
+    "libType": "A",
+    "mates1": "/mnt/c/Metisa_RNA/fastq/SRR8905601/SRR8905601_1.fastq.gz",
+    "mates2": "/mnt/c/Metisa_RNA/fastq/SRR8905601/SRR8905601_2.fastq.gz",
+    "threads": "4",
+    "validateMappings": [],
+    "output": "/mnt/c/Gene_py_github/SRA/SRR8905601",
+    "auxDir": "aux_info"
+}
