@@ -1,0 +1,22 @@
+QC_Measurement	Value
+Number of sequences	26490
+Number of unique IDs	26490
+Duplicate ID groups	0
+Extra duplicate ID records	0
+Empty input sequences	0
+Terminal stop-containing proteins	25000
+Internal stop-containing proteins	0
+Empty sequences after cleanup	0
+Proteins <50 aa	221
+Proteins <100 aa	4303
+Proteins containing X	1993
+Total X residues	2031
+Total invalid amino-acid characters	0
+Proteins containing invalid amino-acid characters	0
+Invalid character breakdown	None
+Total protein length (aa)	9614386
+Minimum protein length (aa)	5
+Maximum protein length (aa)	18909
+Mean protein length (aa)	362.94
+Median protein length (aa)	238.0
+Proteins retained for downstream analysis	26490
