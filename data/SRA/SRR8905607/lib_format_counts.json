@@ -1,0 +1,22 @@
+{
+    "read_files": "[ /mnt/c/Metisa_RNA/fastq/SRR8905607/SRR8905607_1.fastq.gz, /mnt/c/Metisa_RNA/fastq/SRR8905607/SRR8905607_2.fastq.gz]",
+    "expected_format": "IU",
+    "compatible_fragment_ratio": 1.0,
+    "num_compatible_fragments": 7300311,
+    "num_assigned_fragments": 7300311,
+    "num_frags_with_concordant_consistent_mappings": 5434025,
+    "num_frags_with_inconsistent_or_orphan_mappings": 2114619,
+    "strand_mapping_bias": 0.5041465580301894,
+    "MSF": 0,
+    "OSF": 0,
+    "ISF": 2739545,
+    "MSR": 0,
+    "OSR": 0,
+    "ISR": 2694480,
+    "SF": 1050412,
+    "SR": 1064207,
+    "MU": 0,
+    "OU": 0,
+    "IU": 0,
+    "U": 0
+}
