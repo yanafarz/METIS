@@ -1,0 +1,26 @@
+{
+  "read_files": [
+    "/mnt/c/metp/rna_clean/SRR8905605_1.trimmed.fastq",
+    "/mnt/c/metp/rna_clean/SRR8905605_2.trimmed.fastq"
+  ],
+  "expected_format": "IU",
+  "compatible_fragment_ratio": 1.0,
+  "num_compatible_fragments": 16397039,
+  "num_incompatible_fragments": 0,
+  "num_assigned_fragments": 16397039,
+  "num_frags_with_concordant_consistent_mappings": 7083476,
+  "num_frags_with_inconsistent_or_orphan_mappings": 9541919,
+  "strand_mapping_bias": 0.5028679422362693,
+  "IU": 0,
+  "ISF": 3562053,
+  "ISR": 3521423,
+  "OU": 0,
+  "OSF": 0,
+  "OSR": 0,
+  "MU": 0,
+  "MSF": 0,
+  "MSR": 0,
+  "U": 0,
+  "SF": 4526144,
+  "SR": 5015775
+}

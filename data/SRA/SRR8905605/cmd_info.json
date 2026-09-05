@@ -1,0 +1,15 @@
+{
+  "salmon_version": "2.6.0",
+  "index": "/mnt/c/metp/rna_salmon_index",
+  "libType": "A",
+  "output": "/mnt/c/metp/rna_quant/SRR8905605",
+  "mates1": [
+    "/mnt/c/metp/rna_clean/SRR8905605_1.trimmed.fastq"
+  ],
+  "mates2": [
+    "/mnt/c/metp/rna_clean/SRR8905605_2.trimmed.fastq"
+  ],
+  "unmatedReads": [],
+  "threads": 4,
+  "sketch": false
+}
