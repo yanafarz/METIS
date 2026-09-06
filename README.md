@@ -76,6 +76,14 @@ The portal complements the computational notebook by providing an interactive in
 team_CSGL/
 ├── README.md
 ├── environment.yml
+|
+├── data/
+│   ├── SRA
+│   ├── raw_blast.zip
+│   ├── filtered.fasta
+│   ├── mp_screening
+│   ├── mp_interpro.zip
+│   └── mining_blast.zip
 │
 ├── notebook/
 │   └── analysis.ipynb
@@ -91,6 +99,8 @@ team_CSGL/
 │   └── 08_final_ranking.ipynb
 │
 ├── results/
+│   ├── mining_candidates.tsv
+│   ├── phylo_summary.tsv
 │   └── top10_candidates.xlsx
 │
 └── report/
