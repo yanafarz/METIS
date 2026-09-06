@@ -10,7 +10,13 @@ The workflow progressively reduces the search space from **26,490 predicted prot
 
 ---
 
-## Website
+## Project Website
+
+An interactive web portal was developed to present the *Metisa plana* target-mining workflow and summarise the evidence supporting the prioritised candidates.
+
+The portal provides an accessible overview of the computational pipeline, candidate prioritisation process, integrated evidence, and final target selection.
+
+**🌐 Explore the Metisa plana Target Discovery Portal:**  
 https://gxxyu.github.io/-metisa-target-portal/
 
 ## Workflow
