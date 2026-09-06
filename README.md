@@ -10,14 +10,24 @@ The workflow progressively reduces the search space from **26,490 predicted prot
 
 ---
 
-## Project Website
+## 🌐 Metisa Target Portal
 
-An interactive web portal was developed to present the *Metisa plana* target-mining workflow and summarise the evidence supporting the prioritised candidates.
+An interactive web portal was developed to present the final *Metisa plana* target-discovery results in a user-friendly format.
 
-The portal provides an accessible overview of the computational pipeline, candidate prioritisation process, integrated evidence, and final target selection.
+The portal provides:
 
-**🌐 Explore the Metisa plana Target Discovery Portal:**  
-https://gxxyu.github.io/-metisa-target-portal/
+- **Top Targets** — interactive presentation of the 10 prioritised molecular targets
+- **Protein Explorer** — searchable and filterable view of the Top 100 candidates
+- **Workflow** — visual overview of the complete computational pipeline
+- **QC & Screening** — sequence QC, BLAST filtering and contamination-screening results
+- **Methods** — analysis methodology and project resources
+- **Processed Results** — downloadable Top 10 and Top 100 candidate datasets
+
+### 🔗 Access the Portal
+
+**[Open the Metisa Target Portal](https://gxxyu.github.io/-metisa-target-portal/)**
+
+The portal complements the computational notebook by providing an interactive interface for exploring the prioritised candidates and summarising the evidence used during target selection.
 
 ## Workflow
 
