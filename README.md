@@ -82,7 +82,7 @@ team_CSGL/
 │   ├── protein_longest_isoform.fasta
 │   ├── raw_blast.zip
 │   ├── filtered.fasta
-│   ├── mp_screening
+│   ├── mp_screening.tsv
 │   ├── mp_interpro.zip
 │   └── mining_blast.zip
 │
