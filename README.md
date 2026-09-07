@@ -79,7 +79,6 @@ team_CSGL/
 |
 ├── data/
 │   ├── SRA
-│   ├── protein_longest_isoform.fasta
 │   ├── raw_blast.zip
 │   ├── filtered.fasta
 │   ├── mp_screening.tsv
