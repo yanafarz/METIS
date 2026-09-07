@@ -80,7 +80,6 @@ team_CSGL/
 ├── data/
 │   ├── SRA
 │   ├── raw_blast.zip
-│   ├── filtered.fasta
 │   ├── mp_screening.tsv
 │   ├── mp_interpro.zip
 │   └── mining_blast.zip
