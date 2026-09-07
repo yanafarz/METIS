@@ -1,5 +1,4 @@
-# METER
-### Metisa Evidence-based Target Evaluation and Ranking
+# METER :  Metisa Evidence-based Target Evaluation and Ranking
 
 ## Overview
 
