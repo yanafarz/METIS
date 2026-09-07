@@ -1,4 +1,4 @@
-# METER :  Metisa Evidence-based Target Evaluation and Ranking
+# METIS :  Metisa plana Evidence-integrated Target Identification System
 
 ## Overview
 
