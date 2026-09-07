@@ -1,4 +1,4 @@
-# Track 2 — Gene Mining for Pesticide Targets in *Metisa plana*
+# METER*
 
 ## Overview
 
